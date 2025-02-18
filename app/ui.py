@@ -26,7 +26,6 @@ class GUI:
     def __init__(self):
         self.root = None
         self.analysis_shown = None
-        self.model_analysis_shown = None
         self.analysis_label = None
         self.poppins_font = None
         self.file_handler = None
@@ -59,7 +58,6 @@ class GUI:
         self._setup_header(main_frame)
         self._setup_upload_section(main_frame)
         self._setup_analysis_section(main_frame)
-        self._setup_model_analysis_section(main_frame)
 
         self.ai_analyzer.check_env_file()
 
@@ -145,7 +143,7 @@ class GUI:
 
         self.analysis_label = ctk.CTkLabel(
             header,
-            text="Analysis Results:",
+            text="Results:",
             text_color=COLORS["secondary"],
             font=(self.poppins_font.actual("family"), 16, "bold"),
             fg_color="transparent",
@@ -155,7 +153,7 @@ class GUI:
             header,
             text="Start Over",
             command=self.reset_interface,
-            font=(self.poppins_font.actual("family"), 12, "bold"),
+            font=(self.poppins_font.actual("family"), 14, "bold"),
             fg_color=COLORS["action"],
             text_color=COLORS["white"],
             hover_color=COLORS["helper"],
@@ -163,48 +161,43 @@ class GUI:
 
         header.pack(fill="x", pady=(0, 10))
 
-        self.analysis_html = HtmlFrame(
-            self.analysis_frame, horizontal_scrollbar=False, vertical_scrollbar=False
+        self._setup_tabs(self.analysis_frame)
+
+    def _setup_tabs(self, parent):
+        self.tabview = ctk.CTkTabview(
+            parent,
+            fg_color=COLORS["dark-card"],
+            segmented_button_fg_color=COLORS["primary-dark"],
+            segmented_button_selected_color=COLORS["helper"],
+            segmented_button_selected_hover_color=COLORS["helper"],
         )
 
-        self._prettyScrollbar(self.analysis_html)
+        self.tabview._segmented_button.configure(
+            font=ctk.CTkFont(family="Poppins", size=14, weight="bold"),
+        )
+
+        self.tabview.pack(fill="both", expand=True)
+
+        self.analysis_tab = self.tabview.add(" Analysis ")
+        self.model_analysis_tab = self.tabview.add(" Model Analysis ")
+
+        self.analysis_html = HtmlFrame(
+            self.analysis_tab, horizontal_scrollbar=False, vertical_scrollbar=False
+        )
+        self._prettyScrollbar(self.analysis_html, self.analysis_tab)
         self.analysis_html.pack(fill="both", expand=True)
 
-    def _setup_model_analysis_section(self, parent):
-        self.model_analysis_shown = BooleanVar(value=False)
-
-        self.model_analysis_frame = ctk.CTkFrame(
-            parent, fg_color=COLORS["primary-dark"], corner_radius=0
-        )
-
-        divider = ctk.CTkFrame(
-            self.model_analysis_frame, height=2, fg_color=COLORS["helper"]
-        )
-
-        divider.pack(fill="x", pady=(10, 5))
-
-        self.model_analysis_label = ctk.CTkLabel(
-            self.model_analysis_frame,
-            text="Model Analysis:",
-            text_color=COLORS["secondary"],
-            font=(self.poppins_font.actual("family"), 16, "bold"),
-            fg_color="transparent",
-        ).pack(side="left", padx=(10, 0))
-
         self.model_analysis_html = HtmlFrame(
-            self.model_analysis_frame,
+            self.model_analysis_tab,
             horizontal_scrollbar=False,
             vertical_scrollbar=False,
         )
-
-        self._prettyScrollbar(self.model_analysis_html)
+        self._prettyScrollbar(self.model_analysis_html, self.model_analysis_tab)
         self.model_analysis_html.pack(fill="both", expand=True)
 
-    def _prettyScrollbar(self, widget):
+    def _prettyScrollbar(self, widget, parent):
         internal_widget = widget.winfo_children()[0]
-        custom_scrollbar = ctk.CTkScrollbar(
-            self.analysis_frame, command=internal_widget.yview
-        )
+        custom_scrollbar = ctk.CTkScrollbar(parent, command=internal_widget.yview)
         custom_scrollbar.pack(side="right", fill="y")
         internal_widget.configure(yscrollcommand=custom_scrollbar.set)
         self._enable_mouse_scroll(self, internal_widget)
@@ -257,7 +250,7 @@ class GUI:
             return
 
         css_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "assets", "style.css"
+            os.path.dirname(os.path.dirname(__file__)), "assets", "css", "analysis.css"
         )
 
         with open(css_path, "r", encoding="utf-8") as css_file:
@@ -276,25 +269,18 @@ class GUI:
             analysis = self.ai_analyzer.analyze(content)
             self.display_analysis(analysis, self.analysis_html)
         if modelContent:
-            print("exists")
             analysis = self.ai_analyzer.analyzeModel(modelContent)
-            if not self.model_analysis_shown.get():
-                self.model_analysis_frame.pack(fill="both", expand=True)
-                self.model_analysis_shown.set(True)
             self.display_analysis(analysis, self.model_analysis_html)
 
     def reset_interface(self):
         # Clear and hide analysis section
         self.model_analysis_html.load_html("")
-        self.model_analysis_frame.pack_forget()
-
         self.analysis_html.load_html("")
         self.analysis_frame.pack_forget()
 
         # Show upload section again
         self.upload_frame.pack(side="bottom", fill="x", pady=20)
         self.analysis_shown.set(False)
-        self.model_analysis_shown.set(False)
 
     def show_analysis_widgets(self):
         if not self.analysis_shown.get():

@@ -27,6 +27,7 @@ class AIAnalyzer:
 
     def analyze(self, content):
         try:
+            """
             client = openai.OpenAI()
             response = client.chat.completions.create(
                 model="o3-mini",
@@ -45,47 +46,11 @@ class AIAnalyzer:
                     },
                 ],
             )
-            # print(response)
+            
             return response.choices[0].message.content
-            '''
-            return """
-# Example Markdown
+            """
+            return self._return_test_response()
 
-## Introduction
-
-This is an example of markdown text. Markdown is a lightweight markup language with plain-text formatting syntax.
-
-### Features
-
-- Easy to read and write
-- Converts to HTML
-- Widely used in documentation
-
-**Bold Text** and *Italic Text* are simple to create.
-
-```python
-# Example of Python code block
-def greet():
-    print("Hello, World!")
-```
-
-### Features
-
-- Easy to read and write
-- Converts to HTML
-- Widely used in documentation
-
-**Bold Text** and *Italic Text* are simple to create.
-
-```python
-# Example of Python code block
-def greet():
-    print("Hello, World!")
-```
-
-For more information, visit [Markdown Guide](https://www.markdownguide.org).
-"""
-'''
         except Exception as e:
             messagebox.showerror(
                 "API Error", f"Failed to analyze with ChatGPT: {str(e)}"
@@ -94,6 +59,7 @@ For more information, visit [Markdown Guide](https://www.markdownguide.org).
 
     def analyzeModel(self, content):
         try:
+            """
             client = openai.OpenAI()
             response = client.chat.completions.create(
                 model="o3-mini",
@@ -111,8 +77,24 @@ For more information, visit [Markdown Guide](https://www.markdownguide.org).
             )
 
             return response.choices[0].message.content
+            """
+            return self._return_test_response()
+
         except Exception as e:
             messagebox.showerror(
                 "API Error", f"Failed to analyze with ChatGPT: {str(e)}"
             )
             return None
+
+    @staticmethod
+    def _return_test_response():
+        with open(
+            os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "assets",
+                "examples",
+                "md_response",
+            ),
+            "r",
+        ) as f:
+            return f.read()
