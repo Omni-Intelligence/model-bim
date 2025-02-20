@@ -9,7 +9,8 @@ def select_file():
         None,
         "Select a file",
         os.path.expanduser("~"),
-        "All Allowed Files (*.pbix *.txt *.csv *.json);;Power BI files (*.pbix);;Text files (*.txt);;CSV files (*.csv);;JSON files (*.json)",
+        # "All Allowed Files (*.pbix *.txt *.csv *.json);;Power BI files (*.pbix);;Text files (*.txt);;CSV files (*.csv);;JSON files (*.json)",
+        "Power BI model files (*.bim)",
     )
     print(file_path)
 

@@ -1,12 +1,12 @@
+import logging
 import os
 import markdown
-from tkinter import messagebox, BooleanVar
 import customtkinter as ctk
-from tkinterweb import HtmlFrame
-from tkinterdnd2 import DND_FILES
 from PIL import Image
-from app.file_handler import DnDTk, FileHandler
-from app.ai_analyzer import AIAnalyzer
+from tkinter import BooleanVar
+from tkinterweb import HtmlFrame
+from tkinterdnd2 import TkinterDnD, DND_FILES
+from app.controller import Controller
 
 
 COLORS = {
@@ -22,31 +22,36 @@ COLORS = {
 }
 
 
+class DnDTk(ctk.CTk, TkinterDnD.DnDWrapper):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.TkdndVersion = TkinterDnD._require(self)
+
+
 class GUI:
-    def __init__(self):
+    def __init__(self, controller=None):
+        # Main components
         self.root = None
+        self.controller = controller or Controller()
+
+        # UI Elements
+        self.upload_frame = None
+        self.analysis_frame = None
+        self.tabview = None
+        self.html_frames = {}
+
+        # State
         self.analysis_shown = None
         self.analysis_label = None
         self.poppins_font = None
-        self.file_handler = None
-        self.ai_analyzer = None
-
-    def set_handlers(self, file_handler=None, ai_analyzer=None):
-        self.file_handler = file_handler or FileHandler()
-        self.ai_analyzer = ai_analyzer or AIAnalyzer()
+        self.logo_image = None
 
     def create_gui(self):
-        if self.file_handler is None or self.ai_analyzer is None:
-            self.set_handlers()
-
         ctk.set_appearance_mode("system")
         self.root = DnDTk()
         self.root.title("AnalystHub 2.0")
         self.root.geometry("1024x768")
         self.root.configure(fg_color=COLORS["primary-dark"])
-
-        # Expose process_file to DnDTk for drag and drop
-        self.root.process_file = self.process_file
 
         self.poppins_font = ctk.CTkFont(family="Poppins", size=12)
 
@@ -59,7 +64,7 @@ class GUI:
         self._setup_upload_section(main_frame)
         self._setup_analysis_section(main_frame)
 
-        self.ai_analyzer.check_env_file()
+        self.controller.check_env_file()
 
         return self.root
 
@@ -130,6 +135,17 @@ class GUI:
             border_spacing=10,
         ).pack(padx=30, pady=(5, 20))
 
+    def _handle_upload_frame_drop(self, event):
+        file_path = event.data.strip("{}")  # handle curly braces on Windows
+        self._process_file(file_path)
+
+    def _upload_file(self):
+        file_path = self.controller.file_handler.select_file()
+        if not file_path:
+            return
+
+        self._process_file(file_path)
+
     def _setup_analysis_section(self, parent):
         self.analysis_shown = BooleanVar(value=False)
 
@@ -178,24 +194,39 @@ class GUI:
 
         self.tabview.pack(fill="both", expand=True)
 
-        self.analysis_tab = self.tabview.add(" Analysis ")
-        self.model_analysis_tab = self.tabview.add(" Model Analysis ")
+        for task_name in self.controller.analysis_tasks().keys():
+            tab_title = " " + task_name.replace("_", " ").title() + " "
+            tab = self.tabview.add(tab_title)
 
-        self.analysis_html = HtmlFrame(
-            self.analysis_tab, horizontal_scrollbar=False, vertical_scrollbar=False
+            html_frame = self._setup_html_frame(tab)
+            self.html_frames[task_name] = html_frame
+
+        # self.analysis_tab = self.tabview.add(" Analysis ")
+        # self.model_analysis_tab = self.tabview.add(" Model Analysis ")
+
+        # self.analysis_html = HtmlFrame(
+        #     self.analysis_tab, horizontal_scrollbar=False, vertical_scrollbar=False
+        # )
+        # self._setup_custom_scrollbar(self.analysis_html, self.analysis_tab)
+        # self.analysis_html.pack(fill="both", expand=True)
+
+        # self.model_analysis_html = HtmlFrame(
+        #     self.model_analysis_tab,
+        #     horizontal_scrollbar=False,
+        #     vertical_scrollbar=False,
+        # )
+        # self._setup_custom_scrollbar(self.model_analysis_html, self.model_analysis_tab)
+        # self.model_analysis_html.pack(fill="both", expand=True)
+
+    def _setup_html_frame(self, parent):
+        html_frame = HtmlFrame(
+            parent, horizontal_scrollbar=False, vertical_scrollbar=False
         )
-        self._prettyScrollbar(self.analysis_html, self.analysis_tab)
-        self.analysis_html.pack(fill="both", expand=True)
+        self._setup_custom_scrollbar(html_frame, parent)
+        html_frame.pack(fill="both", expand=True)
+        return html_frame
 
-        self.model_analysis_html = HtmlFrame(
-            self.model_analysis_tab,
-            horizontal_scrollbar=False,
-            vertical_scrollbar=False,
-        )
-        self._prettyScrollbar(self.model_analysis_html, self.model_analysis_tab)
-        self.model_analysis_html.pack(fill="both", expand=True)
-
-    def _prettyScrollbar(self, widget, parent):
+    def _setup_custom_scrollbar(self, widget, parent):
         internal_widget = widget.winfo_children()[0]
         custom_scrollbar = ctk.CTkScrollbar(parent, command=internal_widget.yview)
         custom_scrollbar.pack(side="right", fill="y")
@@ -210,24 +241,6 @@ class GUI:
 
         widget.bind("<Button-4>", lambda e: widget.yview_scroll(-1, "units"), add="+")
         widget.bind("<Button-5>", lambda e: widget.yview_scroll(1, "units"), add="+")
-
-    def _handle_upload_frame_drop(self, event):
-        file_path = event.data.strip("{}")  # handle curly braces on Windows
-        if self.file_handler.is_valid_file_type(file_path):
-            content = self.file_handler.read_file(file_path)
-            self.process_file(content.get("content"), content.get("modelContent"))
-        else:
-            messagebox.showerror("Error", "Unsupported file type")
-
-    def _upload_file(self):
-        file_path = self.file_handler.select_file()
-        if not file_path:
-            return
-
-        content = self.file_handler.read_file(file_path)
-
-        if content:
-            self.process_file(content.get("content"), content.get("modelContent"))
 
     def create_gradient(self, width, height, start_color, end_color):
         gradient = Image.new("RGB", (width, height))
@@ -261,32 +274,34 @@ class GUI:
 
         widget.load_html(html_content)
 
-    def process_file(self, content, modelContent=None):
-        if content:
-            self.upload_frame.pack_forget()
-            self.show_analysis_widgets()
-            self.show_loading()
-            analysis = self.ai_analyzer.analyze(content)
-            self.display_analysis(analysis, self.analysis_html)
-        if modelContent:
-            analysis = self.ai_analyzer.analyzeModel(modelContent)
-            self.display_analysis(analysis, self.model_analysis_html)
-
-    def reset_interface(self):
-        # Clear and hide analysis section
-        self.model_analysis_html.load_html("")
-        self.analysis_html.load_html("")
-        self.analysis_frame.pack_forget()
-
-        # Show upload section again
-        self.upload_frame.pack(side="bottom", fill="x", pady=20)
-        self.analysis_shown.set(False)
-
     def show_analysis_widgets(self):
         if not self.analysis_shown.get():
             self.analysis_frame.pack(fill="both", expand=True)
             self.analysis_shown.set(True)
 
     def show_loading(self):
-        self.analysis_html.load_html("<p>Analyzing file... Please wait...</p>")
+        for html_frame in self.html_frames.values():
+            html_frame.load_html("<p>Analyzing file... Please wait...</p>")
         self.root.update()
+
+    def reset_interface(self):
+        # Clear and hide analysis section
+        for html_frame in self.html_frames.values():
+            html_frame.load_html("")
+        self.analysis_frame.pack_forget()
+
+        # Show upload section again
+        self.upload_frame.pack(side="bottom", fill="x", pady=20)
+        self.analysis_shown.set(False)
+        self.controller.reset()
+
+    def _process_file(self, file_path):
+        result = self.controller.process_file(file_path)
+        if result:
+            self.upload_frame.pack_forget()
+            self.show_analysis_widgets()
+            self.show_loading()
+
+            for task_name, analysis_result in result.items():
+                if task_name in self.html_frames:
+                    self.display_analysis(analysis_result, self.html_frames[task_name])

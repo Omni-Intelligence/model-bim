@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 import openai
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox
 
 
 class AIAnalyzer:
@@ -9,23 +9,7 @@ class AIAnalyzer:
         load_dotenv()
         openai.api_key = os.getenv("OPENAI_API_KEY")
 
-    def check_env_file(self):
-        if not os.path.exists(".env"):
-            api_key = simpledialog.askstring(
-                "API Key", "Please enter your OpenAI API key:"
-            )
-            if api_key:
-                with open(".env", "w") as f:
-                    f.write(f"OPENAI_API_KEY={api_key}")
-            else:
-                messagebox.showerror(
-                    "Error", "OpenAI API key is required to use this application."
-                )
-                return False
-
-        return True
-
-    def analyze(self, content):
+    def analyze(self, task, content):
         try:
             """
             client = openai.OpenAI()
@@ -98,3 +82,32 @@ class AIAnalyzer:
             "r",
         ) as f:
             return f.read()
+
+        """
+        Best ideas
+ 
+Here are some ideas for adding value and boosting productivity for a data analyst working with this model:
+ 
+• Enhanced Data Documentation:
+  - Create a data dictionary that not only lists the tables, columns, and measures but also explains what each field represents and how measures are calculated.
+  - Include descriptions of key business logic (for example, how outliers are defined) and any assumptions built into the calculations.
+ 
+• Interactive Metadata Dashboard:
+  - Develop an internal dashboard that displays metadata details—such as relationships, measure dependencies, and data lineage.
+  - This can help analysts quickly understand how the model is structured and identify which measures or tables to focus on for a given analysis.
+ 
+• Best Practices and Usage Guides:
+  - Offer guidelines on when to use specific measures (for example, explaining the context behind [Total Sales] versus [Outlier Sales]).
+  - Provide examples of how to combine measures with visualizations (e.g., line charts for trends, scatter plots for outlier detection) along with interpretation tips.
+ 
+• Performance and Diagnostic Insights:
+  - Supply diagnostic views that show which parts of the model are most used or might be causing performance bottlenecks.
+  - Include recommendations on improving query performance (for example, by checking relationships or reviewing calculated column logic).
+ 
+Analysis Ideas
+ 
+Report Ideas
+ 
+Missing Analysis
+ 
+Improved DAX measures"""

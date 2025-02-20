@@ -1,0 +1,34 @@
+2025-02-20 12:38:11,665 - root - INFO - System logging initialized. Logs will be stored in: /var/www/html/python/analysthub/storage/logs/system.log
+2025-02-20 12:38:12,225 - PIL.PngImagePlugin - DEBUG - STREAM b'IHDR' 16 13
+2025-02-20 12:38:12,225 - PIL.PngImagePlugin - DEBUG - STREAM b'bKGD' 41 6
+2025-02-20 12:38:12,225 - PIL.PngImagePlugin - DEBUG - b'bKGD' 41 6 (unknown)
+2025-02-20 12:38:12,225 - PIL.PngImagePlugin - DEBUG - STREAM b'IDAT' 59 4727
+2025-02-20 12:38:15,543 - root - INFO - hello
+2025-02-20 12:38:15,668 - MARKDOWN - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-02-20 12:38:58,731 - root - INFO - System logging initialized. Logs will be stored in: /var/www/html/python/analysthub/storage/logs/system.log
+2025-02-20 12:38:59,310 - PIL.PngImagePlugin - DEBUG - STREAM b'IHDR' 16 13
+2025-02-20 12:38:59,310 - PIL.PngImagePlugin - DEBUG - STREAM b'bKGD' 41 6
+2025-02-20 12:38:59,310 - PIL.PngImagePlugin - DEBUG - b'bKGD' 41 6 (unknown)
+2025-02-20 12:38:59,310 - PIL.PngImagePlugin - DEBUG - STREAM b'IDAT' 59 4727
+2025-02-20 12:39:02,856 - MARKDOWN - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-02-20 12:43:27,885 - root - INFO - System logging initialized. Logs will be stored in: /var/www/html/python/analysthub/storage/logs/system.log
+2025-02-20 12:43:28,487 - PIL.PngImagePlugin - DEBUG - STREAM b'IHDR' 16 13
+2025-02-20 12:43:28,488 - PIL.PngImagePlugin - DEBUG - STREAM b'bKGD' 41 6
+2025-02-20 12:43:28,488 - PIL.PngImagePlugin - DEBUG - b'bKGD' 41 6 (unknown)
+2025-02-20 12:43:28,488 - PIL.PngImagePlugin - DEBUG - STREAM b'IDAT' 59 4727
+2025-02-20 12:43:35,131 - MARKDOWN - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-02-20 12:43:41,319 - MARKDOWN - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-02-20 13:14:30,121 - root - INFO - System logging initialized. Logs will be stored in: /var/www/html/python/analysthub/storage/logs/system.log
+2025-02-20 13:14:30,695 - PIL.PngImagePlugin - DEBUG - STREAM b'IHDR' 16 13
+2025-02-20 13:14:30,696 - PIL.PngImagePlugin - DEBUG - STREAM b'bKGD' 41 6
+2025-02-20 13:14:30,696 - PIL.PngImagePlugin - DEBUG - b'bKGD' 41 6 (unknown)
+2025-02-20 13:14:30,696 - PIL.PngImagePlugin - DEBUG - STREAM b'IDAT' 59 4727
+2025-02-20 13:16:01,810 - root - INFO - System logging initialized. Logs will be stored in: /var/www/html/python/analysthub/storage/logs/system.log
+2025-02-20 13:16:02,427 - PIL.PngImagePlugin - DEBUG - STREAM b'IHDR' 16 13
+2025-02-20 13:16:02,427 - PIL.PngImagePlugin - DEBUG - STREAM b'bKGD' 41 6
+2025-02-20 13:16:02,427 - PIL.PngImagePlugin - DEBUG - b'bKGD' 41 6 (unknown)
+2025-02-20 13:16:02,427 - PIL.PngImagePlugin - DEBUG - STREAM b'IDAT' 59 4727
+2025-02-20 13:16:11,697 - MARKDOWN - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-02-20 13:16:11,703 - MARKDOWN - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-02-20 13:16:11,708 - MARKDOWN - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".
+2025-02-20 13:16:11,713 - MARKDOWN - DEBUG - Successfully loaded extension "markdown.extensions.fenced_code.FencedCodeExtension".

@@ -3,20 +3,12 @@ import sys
 from tkinter import messagebox
 import os
 import zipfile
-import customtkinter as ctk
-from tkinterdnd2 import TkinterDnD
-
-
-class DnDTk(ctk.CTk, TkinterDnD.DnDWrapper):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.TkdndVersion = TkinterDnD._require(self)
 
 
 class FileHandler:
     @staticmethod
     def is_valid_file_type(file_path):
-        valid_extensions = (".pbix", ".txt", ".csv", ".json")
+        valid_extensions = ".bim"
         return file_path.lower().endswith(valid_extensions)
 
     @staticmethod
@@ -33,11 +25,9 @@ class FileHandler:
 
     @staticmethod
     def read_file(file_path):
-        if file_path.lower().endswith(".pbix"):
-            return FileHandler.read_pbix_report(file_path)
         try:
             with open(file_path, "r") as file:
-                return {"content": file.read()}
+                return file.read()
         except Exception as e:
             messagebox.showerror("Error", f"Failed to read file: {str(e)}")
             return None
