@@ -1,4 +1,3 @@
-import logging
 import os
 import markdown
 import customtkinter as ctk
@@ -200,23 +199,6 @@ class GUI:
 
             html_frame = self._setup_html_frame(tab)
             self.html_frames[task_name] = html_frame
-
-        # self.analysis_tab = self.tabview.add(" Analysis ")
-        # self.model_analysis_tab = self.tabview.add(" Model Analysis ")
-
-        # self.analysis_html = HtmlFrame(
-        #     self.analysis_tab, horizontal_scrollbar=False, vertical_scrollbar=False
-        # )
-        # self._setup_custom_scrollbar(self.analysis_html, self.analysis_tab)
-        # self.analysis_html.pack(fill="both", expand=True)
-
-        # self.model_analysis_html = HtmlFrame(
-        #     self.model_analysis_tab,
-        #     horizontal_scrollbar=False,
-        #     vertical_scrollbar=False,
-        # )
-        # self._setup_custom_scrollbar(self.model_analysis_html, self.model_analysis_tab)
-        # self.model_analysis_html.pack(fill="both", expand=True)
 
     def _setup_html_frame(self, parent):
         html_frame = HtmlFrame(

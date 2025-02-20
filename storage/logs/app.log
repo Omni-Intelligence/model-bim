@@ -1,6 +1,0 @@
-2025-02-20 12:38:11,665 - app - INFO - App logging initialized. Logs will be stored in: /var/www/html/python/analysthub/storage/logs/app.log
-2025-02-20 12:38:58,731 - app - INFO - App logging initialized. Logs will be stored in: /var/www/html/python/analysthub/storage/logs/app.log
-2025-02-20 12:39:02,732 - app - INFO - hello
-2025-02-20 12:43:27,884 - app - INFO - App logging initialized. Logs will be stored in: /var/www/html/python/analysthub/storage/logs/app.log
-2025-02-20 13:14:30,121 - app - INFO - App logging initialized. Logs will be stored in: /var/www/html/python/analysthub/storage/logs/app.log
-2025-02-20 13:16:01,809 - app - INFO - App logging initialized. Logs will be stored in: /var/www/html/python/analysthub/storage/logs/app.log

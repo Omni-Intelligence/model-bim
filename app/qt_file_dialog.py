@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import QApplication, QFileDialog
 
 
 def select_file():
-    app = QApplication(sys.argv)
+    app = QApplication(sys.argv)  # noqa: F841 (Needed for window setup)
     file_path, _ = QFileDialog.getOpenFileName(
         None,
         "Select a file",

@@ -1,4 +1,4 @@
-import config  # noqa: F401 (Needed for logging setup)
+import config  # noqa: F401 (Needed for configs setup)
 from app.ui import GUI
 
 
