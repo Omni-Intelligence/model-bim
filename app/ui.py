@@ -1,3 +1,5 @@
+from threading import Thread
+from queue import Queue, Empty
 import logging
 import os
 import markdown2
@@ -279,23 +281,69 @@ class GUI:
             html_frame.load_html("<p>Analyzing file... Please wait...</p>")
         self.root.update()
 
+        self.result_queue = Queue()
+        analysis_thread = Thread(
+            target=self._run_analysis, args=(file_path, self.result_queue), daemon=True
+        )
+        analysis_thread.start()
+
+        self._check_results()
+
+    def _run_analysis(self, file_path, queue):
+        """Run analysis in a separate thread"""
         task_generator = self.controller.process_file(file_path)
         if task_generator:
-            self._process_tasks(task_generator)
-
-    def _process_tasks(self, task_generator):
-        def process_next_task():
             try:
-                task_name, analysis_result = next(task_generator)
+                for result in task_generator:
+                    queue.put(("result", result))
+            except Exception as e:
+                queue.put(("error", str(e)))
+            finally:
+                queue.put(("done", None))
+
+    def _check_results(self):
+        try:
+            message_type, data = self.result_queue.get_nowait()
+
+            if message_type == "result":
+                task_name, analysis_result = data
                 if task_name in self.html_frames:
                     self.display_analysis(analysis_result, self.html_frames[task_name])
                     self.html_frames[task_name].update()
-                    self.root.update_idletasks()
 
-                self.root.after(10, process_next_task)
-            except StopIteration:
-                self.root.update_idletasks()
-            except Exception as e:
-                logging.getLogger("app").error(f"Error in task processing: {str(e)}")
+                self.root.after(10, self._check_results)
 
-        process_next_task()
+            elif message_type == "error":
+                error_message = f"Analysis error: {data}"
+                logging.getLogger("app").error(error_message)
+
+                # Display error in all tabs that haven't received results yet
+                error_html = f"""
+                    <div style="color: #ff6900; padding: 20px; text-align: center;">
+                        <h3>Error During Analysis</h3>
+                        <p>{error_message}</p>
+                    </div>
+                """
+                for html_frame in self.html_frames.values():
+                    if (
+                        html_frame.html.get()
+                        == "<p>Analyzing file... Please wait...</p>"
+                    ):
+                        html_frame.load_html(error_html)
+
+            elif message_type == "done":
+                pass
+
+        except Empty:
+            self.root.after(100, self._check_results)
+        except Exception as e:
+            logging.getLogger("app").error(f"Error checking results: {str(e)}")
+            # Display error in UI
+            error_html = f"""
+                <div style="color: #ff6900; padding: 20px; text-align: center;">
+                    <h3>Unexpected Error</h3>
+                    <p>An error occurred while processing results: {str(e)}</p>
+                </div>
+            """
+            for html_frame in self.html_frames.values():
+                html_frame.load_html(error_html)

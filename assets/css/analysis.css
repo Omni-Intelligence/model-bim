@@ -1,82 +1,112 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
 
-body { 
-    font-family: 'Poppins', 'Arial', sans-serif; 
-    color: #0b0c18; 
-    background-color: #f5f5f5; 
-    padding: 20px;
-    line-height: 1.6;
+body {
+  font-family: "Poppins", "Arial", sans-serif;
+  color: #0b0c18;
+  background-color: #f5f5f5;
+  padding: 20px;
+  line-height: 1.6;
 }
 
-h1, h2, h3, h4 {
-    margin-top: 0;
-    margin-bottom: 1em;
+h1,
+h2,
+h3,
+h4 {
+  margin-top: 0;
+  margin-bottom: 1em;
 }
 
-h1 { font-size: 28px; font-weight: 700; color: #6654f5;}
-h2 { font-size: 24px; font-weight: 700; color: #ca5a8b;}
-h3 { font-size: 20px; font-weight: 600; color: #6654f5;}
-h4 { font-size: 16px; font-weight: 600; color: #ca5a8b;}
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ca5a8b;
+}
+
+h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #6654f5;
+}
+
+h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #6654f5;
+}
+
+h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #6654f5;
+}
 
 p {
-    margin-bottom: 1em;
+  margin-bottom: 1em;
 }
 
-b { font-weight: 600; }
-i { font-style: italic; }
+b {
+  font-weight: 600;
+}
 
-pre, code { 
-    background-color: #ebebeb; 
-    padding: 8px 12px; 
-    border-radius: 6px;
-    color: #0b0c18;
-    font-family: 'Courier New', Courier, monospace;
+i {
+  font-style: italic;
+}
+
+pre,
+code {
+  background-color: #ebebeb;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #0b0c18;
+  font-family: "Courier New", Courier, monospace;
 }
 
 pre {
-    overflow-x: auto;
-    margin: 1em 0;
+  overflow-x: auto;
+  margin: 1em 0;
 }
 
 code {
-    font-size: 0.9em;
+  font-size: 0.9em;
 }
 
 a {
-    color: #6654f5;
-    text-decoration: none;
-    transition: color 0.3s ease;
+  color: #6654f5;
+  text-decoration: none;
+  transition: color 0.3s ease;
 }
 
 a:hover {
-    color: #ca5a8b;
+  color: #ca5a8b;
 }
 
-pre, .card {
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+pre,
+.card {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-ul, ol {
-    margin-left: 0;
-    margin-bottom: 1em;
+ul,
+ol {
+  margin-left: 0;
+  margin-bottom: 1em;
 }
 
 .section {
-    border-bottom: 1px solid #ebebeb;
-    padding-bottom: 20px;
-    margin-bottom: 20px;
+  border-bottom: 1px solid #ebebeb;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
 }
 
 .button {
-    background-color: #f2b347;
-    color: #ffffff;
-    padding: 10px 20px;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
+  background-color: #f2b347;
+  color: #ffffff;
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 .button:hover {
-    background-color: #ff6900;
+  background-color: #ff6900;
 }
