@@ -1,5 +1,6 @@
+import logging
 import os
-import markdown
+import markdown2
 import customtkinter as ctk
 from PIL import Image
 from tkinter import BooleanVar
@@ -188,7 +189,7 @@ class GUI:
         )
 
         self.tabview._segmented_button.configure(
-            font=ctk.CTkFont(family="Poppins", size=14, weight="bold"),
+            font=ctk.CTkFont(family="Poppins", size=12, weight="bold"),
         )
 
         self.tabview.pack(fill="both", expand=True)
@@ -251,20 +252,10 @@ class GUI:
         with open(css_path, "r", encoding="utf-8") as css_file:
             custom_css = f"<style>{css_file.read()}</style>"
 
-        html_body = markdown.markdown(analysis, extensions=["fenced_code"])
+        html_body = markdown2.markdown(analysis, extras=["fenced-code-blocks"])
         html_content = custom_css + "<body>" + html_body + "</body>"
 
         widget.load_html(html_content)
-
-    def show_analysis_widgets(self):
-        if not self.analysis_shown.get():
-            self.analysis_frame.pack(fill="both", expand=True)
-            self.analysis_shown.set(True)
-
-    def show_loading(self):
-        for html_frame in self.html_frames.values():
-            html_frame.load_html("<p>Analyzing file... Please wait...</p>")
-        self.root.update()
 
     def reset_interface(self):
         # Clear and hide analysis section
@@ -278,12 +269,33 @@ class GUI:
         self.controller.reset()
 
     def _process_file(self, file_path):
-        result = self.controller.process_file(file_path)
-        if result:
-            self.upload_frame.pack_forget()
-            self.show_analysis_widgets()
-            self.show_loading()
+        self.upload_frame.pack_forget()
 
-            for task_name, analysis_result in result.items():
+        if not self.analysis_shown.get():
+            self.analysis_frame.pack(fill="both", expand=True)
+            self.analysis_shown.set(True)
+
+        for html_frame in self.html_frames.values():
+            html_frame.load_html("<p>Analyzing file... Please wait...</p>")
+        self.root.update()
+
+        task_generator = self.controller.process_file(file_path)
+        if task_generator:
+            self._process_tasks(task_generator)
+
+    def _process_tasks(self, task_generator):
+        def process_next_task():
+            try:
+                task_name, analysis_result = next(task_generator)
                 if task_name in self.html_frames:
                     self.display_analysis(analysis_result, self.html_frames[task_name])
+                    self.html_frames[task_name].update()
+                    self.root.update_idletasks()
+
+                self.root.after(10, process_next_task)
+            except StopIteration:
+                self.root.update_idletasks()
+            except Exception as e:
+                logging.getLogger("app").error(f"Error in task processing: {str(e)}")
+
+        process_next_task()
