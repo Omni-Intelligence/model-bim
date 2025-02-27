@@ -76,12 +76,13 @@ class FileHandler:
             return None
 
     @staticmethod
-    def save_as_txt(content, filename=None):
+    def save_as_txt(content, filename=None, file_prefix=None):
         """Save content as a text file."""
         if not filename:
             # Generate filename based on current date
             current_date = datetime.now().strftime("%Y-%m-%d")
-            filename = os.path.join(os.path.expanduser("~"), f"analysis_{current_date}.txt")
+            prefix = file_prefix if file_prefix else "analysis"
+            filename = os.path.join(os.path.expanduser("~"), f"{prefix}_{current_date}.txt")
         
         try:
             with open(filename, "w", encoding="utf-8") as file:
@@ -93,7 +94,7 @@ class FileHandler:
             return False
     
     @staticmethod
-    def save_as_doc(content, filename=None):
+    def save_as_doc(content, filename=None, file_prefix=None):
         """Save content as a Word document."""
         try:
             from docx import Document
@@ -106,7 +107,8 @@ class FileHandler:
         if not filename:
             # Generate filename based on current date
             current_date = datetime.now().strftime("%Y-%m-%d")
-            filename = os.path.join(os.path.expanduser("~"), f"analysis_{current_date}.docx")
+            prefix = file_prefix if file_prefix else "analysis"
+            filename = os.path.join(os.path.expanduser("~"), f"{prefix}_{current_date}.docx")
             
         try:
             doc = Document()
@@ -173,7 +175,7 @@ class FileHandler:
             return False
     
     @staticmethod
-    def save_as_pdf(content, filename=None):
+    def save_as_pdf(content, filename=None, file_prefix=None):
         """Save content as a PDF file."""
         try:
             import weasyprint
@@ -185,7 +187,8 @@ class FileHandler:
         if not filename:
             # Generate filename based on current date
             current_date = datetime.now().strftime("%Y-%m-%d")
-            filename = os.path.join(os.path.expanduser("~"), f"analysis_{current_date}.pdf")
+            prefix = file_prefix if file_prefix else "analysis"
+            filename = os.path.join(os.path.expanduser("~"), f"{prefix}_{current_date}.pdf")
             
         try:
             # Convert markdown to HTML
@@ -257,14 +260,14 @@ class FileHandler:
             return False
 
     @staticmethod
-    def save_analysis(content, file_format):
+    def save_analysis(content, file_format, file_prefix=None):
         """Save analysis content in the specified format."""
         if file_format == "txt":
-            return FileHandler.save_as_txt(content)
+            return FileHandler.save_as_txt(content, file_prefix=file_prefix)
         elif file_format == "doc":
-            return FileHandler.save_as_doc(content)
+            return FileHandler.save_as_doc(content, file_prefix=file_prefix)
         elif file_format == "pdf":
-            return FileHandler.save_as_pdf(content)
+            return FileHandler.save_as_pdf(content, file_prefix=file_prefix)
         else:
             messagebox.showerror("Error", f"Unsupported file format: {file_format}")
             return False

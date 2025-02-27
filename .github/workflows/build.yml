@@ -1,0 +1,153 @@
+name: Build Executables
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install system dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk python3-dev libcairo2-dev libpango1.0-dev libgdk-pixbuf2.0-dev shared-mime-info
+
+      - name: Create .env file with OpenAI API key
+        run: |
+          echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller==5.13.0
+          pip install -r requirements.txt
+
+      - name: Create GitHub Actions compatible build script
+        run: |
+          cat > build_github.py << 'EOL'
+          #!/usr/bin/env python3
+          import os
+          import subprocess
+          import sys
+          import site
+          from pathlib import Path
+
+          # Get site-packages directory from the current Python environment
+          site_packages = site.getsitepackages()[0]
+          print(f"Using site-packages from: {site_packages}")
+
+          # Create a simple spec file
+          spec_content = f"""# -*- mode: python ; coding: utf-8 -*-
+          import os
+          from PyInstaller.utils.hooks import collect_all
+
+          block_cipher = None
+
+          # Create a list of all packages to include
+          packages = [
+              'tkinterweb', 
+              'tkinterdnd2', 
+              'PIL', 
+              'customtkinter', 
+              'markdown', 
+              'docx', 
+              'weasyprint', 
+              'openai'
+          ]
+
+          # Initialize data collection
+          datas = [('assets', 'assets'), ('.env', '.')]
+          if os.path.exists('icon.ico'):
+              datas.append(('icon.ico', '.'))
+          binaries = []
+          hiddenimports = ['PIL._tkinter_finder']
+
+          # Collect all data for each package
+          for package in packages:
+              try:
+                  pkg_datas, pkg_binaries, pkg_hiddenimports = collect_all(package)
+                  datas.extend(pkg_datas)
+                  binaries.extend(pkg_binaries)
+                  hiddenimports.extend(pkg_hiddenimports)
+              except Exception as e:
+                  print(f"Warning: Error collecting {{package}}: {{e}}")
+
+          a = Analysis(
+              ['main.py'],
+              pathex=['{site_packages}'],  # Add site-packages to path
+              binaries=binaries,
+              datas=datas,
+              hiddenimports=hiddenimports,
+              hookspath=[],
+              hooksconfig={{}},
+              runtime_hooks=[],
+              excludes=[],
+              win_no_prefer_redirects=False,
+              win_private_assemblies=False,
+              cipher=block_cipher,
+              noarchive=False,
+          )
+
+          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+
+          exe = EXE(
+              pyz,
+              a.scripts,
+              [],
+              exclude_binaries=True,
+              name='AnalystHub',
+              debug=False,
+              bootloader_ignore_signals=False,
+              strip=False,
+              upx=True,
+              console=True,
+              icon='icon.ico' if os.path.exists('icon.ico') else None,
+          )
+
+          coll = COLLECT(
+              exe,
+              a.binaries,
+              a.zipfiles,
+              a.datas,
+              strip=False,
+              upx=True,
+              upx_exclude=[],
+              name='AnalystHub',
+          )
+          """
+
+          # Write the spec file
+          with open('github.spec', 'w') as f:
+              f.write(spec_content)
+
+          # Run PyInstaller
+          print("Building application with PyInstaller...")
+          subprocess.run(['pyinstaller', '--clean', 'github.spec'])
+
+          print("Build completed. Check the 'dist' directory for the executable.")
+          EOL
+          chmod +x build_github.py
+        shell: bash
+
+      - name: Build executable
+        run: |
+          python build_github.py
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AnalystHub-${{ matrix.os }}
+          path: dist/AnalystHub/*

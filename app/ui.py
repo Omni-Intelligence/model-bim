@@ -52,7 +52,7 @@ class GUI:
     def create_gui(self):
         ctk.set_appearance_mode("system")
         self.root = DnDTk()
-        self.root.title("AnalystHub 2.0")
+        self.root.title("AnalystHub 2.0 - BIM Model Insights")
         self.root.geometry("1024x768")
         self.root.configure(fg_color=COLORS["primary-dark"])
 
@@ -95,7 +95,7 @@ class GUI:
 
         ctk.CTkLabel(
             header_frame,
-            text="Power BI Analysis Toolkit",
+            text="Power BI Model Insight Hub",
             text_color=COLORS["black"],
             font=(self.poppins_font.actual("family"), 16),
             fg_color="transparent",
@@ -121,7 +121,7 @@ class GUI:
 
         ctk.CTkLabel(
             self.upload_frame,
-            text="Drag and drop your file here or use the button below:",
+            text="Drag and drop your .bim file here or use the button below:",
             text_color=COLORS["black"],
             fg_color="transparent",
             font=self.poppins_font,
@@ -129,7 +129,7 @@ class GUI:
 
         ctk.CTkButton(
             self.upload_frame,
-            text="Upload Power BI File",
+            text="Upload BIM File",
             command=self._upload_file,
             font=(self.poppins_font.actual("family"), 12, "bold"),
             fg_color=COLORS["action"],
@@ -168,11 +168,22 @@ class GUI:
             fg_color="transparent",
         ).pack(side="left", padx=(10, 0))
 
+
+        self.start_over_button = ctk.CTkButton(
+            header,
+            text="Start Over",
+            command=self.reset_interface,
+            font=(self.poppins_font.actual("family"), 14, "bold"),
+            fg_color=COLORS["action"],
+            text_color=COLORS["white"],
+            hover_color=COLORS["helper"],
+        ).pack(side="right")
+
         # Add download button with dropdown
         download_frame = ctk.CTkFrame(
             header, fg_color=COLORS["primary-dark"], corner_radius=0
         )
-        download_frame.pack(side="right", padx=(10, 0)) 
+        download_frame.pack(side="right", padx=(0, 10)) 
         
         self.download_button = ctk.CTkButton(
             download_frame,
@@ -184,17 +195,19 @@ class GUI:
             hover_color=COLORS["helper"],
         )
         self.download_button.pack(side="left")
-       
         
-        self.start_over_button = ctk.CTkButton(
-            header,
-            text="Start Over",
-            command=self.reset_interface,
+        # Add download all button with dropdown
+        self.download_all_button = ctk.CTkButton(
+            download_frame,
+            text="Download All",
+            command=self._show_download_all_options,
             font=(self.poppins_font.actual("family"), 14, "bold"),
-            fg_color=COLORS["action"],
+            fg_color=COLORS["primary"],
             text_color=COLORS["white"],
             hover_color=COLORS["helper"],
-        ).pack(side="right")
+        )
+        self.download_all_button.pack(side="left", padx=(10, 0))
+        self.download_all_button.configure(state="disabled")  # Initially disabled
 
         header.pack(fill="x", pady=(0, 10))
 
@@ -357,7 +370,7 @@ class GUI:
                         html_frame.load_html(error_html)
 
             elif message_type == "done":
-                pass
+                self._check_all_tabs_ready()
 
         except Empty:
             self.root.after(100, self._check_results)
@@ -372,6 +385,23 @@ class GUI:
             """
             for html_frame in self.html_frames.values():
                 html_frame.load_html(error_html)
+
+    def _check_all_tabs_ready(self):
+        """Check if all tabs have content and show the download button if they do."""
+        if not hasattr(self, 'analysis_results'):
+            return False
+            
+        all_tasks = self.controller.analysis_tasks().keys()
+        all_ready = all(task in self.analysis_results for task in all_tasks)
+        
+        if all_ready:
+            self.download_button.configure(state="normal")
+            self.download_all_button.configure(state="normal")
+        else:
+            self.download_button.configure(state="disabled")
+            self.download_all_button.configure(state="disabled")
+            
+        return all_ready
 
     def _show_download_options(self):
         """Show dropdown menu with file format options for download."""
@@ -438,8 +468,91 @@ class GUI:
         # Use the original markdown content instead of trying to extract from HTML
         content = self.analysis_results[task_name]
         
+        # Get a display name for the file (based on the tab name)
+        file_prefix = current_tab.strip().replace(" ", "_").lower()
+        
         # Save the content in the specified format
         try:
-            self.controller.file_handler.save_analysis(content, file_format)
+            self.controller.file_handler.save_analysis(content, file_format, file_prefix)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save file: {str(e)}")
+
+    def _show_download_all_options(self):
+        """Show dropdown menu with file format options for downloading all tabs."""
+        # Create a dropdown menu
+        download_menu = ctk.CTkToplevel(self.root)
+        download_menu.title("Choose Format")
+        download_menu.geometry("200x170")
+        download_menu.resizable(False, False)
+        download_menu.attributes("-topmost", True)
+        
+        # Position the menu below the download all button
+        x = self.download_all_button.winfo_rootx()
+        y = self.download_all_button.winfo_rooty() + self.download_all_button.winfo_height()
+        download_menu.geometry(f"+{x}+{y}")
+        
+        # Add format options
+        ctk.CTkLabel(
+            download_menu,
+            text="Select format:",
+            font=(self.poppins_font.actual("family"), 14),
+        ).pack(pady=(10, 5))
+        
+        formats = [
+            ("PDF", "pdf"),
+            ("Text File", "txt"),
+            ("Word Document", "doc")
+        ]
+        
+        for label, format_type in formats:
+            ctk.CTkButton(
+                download_menu,
+                text=label,
+                command=lambda fmt=format_type: self._download_all_analyses(fmt, download_menu),
+                font=self.poppins_font,
+                fg_color=COLORS["primary"],
+                text_color=COLORS["white"],
+                hover_color=COLORS["helper"],
+            ).pack(fill="x", padx=10, pady=5)
+
+    def _download_all_analyses(self, file_format, menu=None):
+        """Download all analyses combined into a single file."""
+        if menu:
+            menu.destroy()
+            
+        # Check if we have analysis results
+        if not hasattr(self, 'analysis_results') or not self.analysis_results:
+            messagebox.showerror("Error", "No analysis content available for download")
+            return
+            
+        # Combine all analyses into a single document
+        combined_content = ""
+        
+        # Get all task names and create display names
+        task_display_names = {}
+        for task_name in self.controller.analysis_tasks().keys():
+            # Convert task_name to a display name (e.g., "general" -> "General")
+            display_name = task_name.replace('_', ' ').title()
+            task_display_names[task_name] = display_name
+        
+        # Add each analysis with a header
+        for task_name, display_name in task_display_names.items():
+            if task_name in self.analysis_results:
+                # Add a section header for each analysis
+                combined_content += f"# {display_name}\n\n"
+                
+                # Add the analysis content
+                combined_content += self.analysis_results[task_name]
+                
+                # Add a separator between sections with more space
+                combined_content += "\n\n\n---\n\n\n"
+        
+        # Remove the last separator
+        if combined_content.endswith("\n\n\n---\n\n\n"):
+            combined_content = combined_content[:-9]
+        
+        # Save the combined content in the specified format
+        try:
+            self.controller.file_handler.save_analysis(combined_content, file_format, "all_analyses")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save file: {str(e)}")
