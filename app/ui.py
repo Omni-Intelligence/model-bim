@@ -9,6 +9,7 @@ from tkinter import BooleanVar
 from tkinterweb import HtmlFrame
 from tkinterdnd2 import TkinterDnD, DND_FILES
 from app.controller import Controller
+from tkinter import messagebox
 
 
 COLORS = {
@@ -167,6 +168,24 @@ class GUI:
             fg_color="transparent",
         ).pack(side="left", padx=(10, 0))
 
+        # Add download button with dropdown
+        download_frame = ctk.CTkFrame(
+            header, fg_color=COLORS["primary-dark"], corner_radius=0
+        )
+        download_frame.pack(side="right", padx=(10, 0)) 
+        
+        self.download_button = ctk.CTkButton(
+            download_frame,
+            text="Download",
+            command=self._show_download_options,
+            font=(self.poppins_font.actual("family"), 14, "bold"),
+            fg_color=COLORS["primary"],
+            text_color=COLORS["white"],
+            hover_color=COLORS["helper"],
+        )
+        self.download_button.pack(side="left")
+       
+        
         self.start_over_button = ctk.CTkButton(
             header,
             text="Start Over",
@@ -287,6 +306,9 @@ class GUI:
         )
         analysis_thread.start()
 
+        # Store the analysis results for later use (e.g., downloading)
+        self.analysis_results = {}
+        
         self._check_results()
 
     def _run_analysis(self, file_path, queue):
@@ -308,9 +330,12 @@ class GUI:
             if message_type == "result":
                 task_name, analysis_result = data
                 if task_name in self.html_frames:
+                    # Store the raw markdown for later use
+                    self.analysis_results[task_name] = analysis_result
+                    
                     self.display_analysis(analysis_result, self.html_frames[task_name])
                     self.html_frames[task_name].update()
-
+                    
                 self.root.after(10, self._check_results)
 
             elif message_type == "error":
@@ -347,3 +372,74 @@ class GUI:
             """
             for html_frame in self.html_frames.values():
                 html_frame.load_html(error_html)
+
+    def _show_download_options(self):
+        """Show dropdown menu with file format options for download."""
+        # Create a dropdown menu
+        download_menu = ctk.CTkToplevel(self.root)
+        download_menu.title("Choose Format")
+        download_menu.geometry("200x170")
+        download_menu.resizable(False, False)
+        download_menu.attributes("-topmost", True)
+        
+        # Position the menu below the download button
+        x = self.download_button.winfo_rootx()
+        y = self.download_button.winfo_rooty() + self.download_button.winfo_height()
+        download_menu.geometry(f"+{x}+{y}")
+        
+        # Add format options
+        ctk.CTkLabel(
+            download_menu,
+            text="Select format:",
+            font=(self.poppins_font.actual("family"), 14),
+        ).pack(pady=(10, 5))
+        
+        formats = [
+            ("PDF", "pdf"),
+            ("Text File", "txt"),
+            ("Word Document", "doc")
+        ]
+        
+        for label, format_type in formats:
+            ctk.CTkButton(
+                download_menu,
+                text=label,
+                command=lambda fmt=format_type: self._download_analysis(fmt, download_menu),
+                font=self.poppins_font,
+                fg_color=COLORS["primary"],
+                text_color=COLORS["white"],
+                hover_color=COLORS["helper"],
+            ).pack(fill="x", padx=10, pady=5)
+
+    def _download_analysis(self, file_format, menu=None):
+        """Download the current analysis in the specified format."""
+        if menu:
+            menu.destroy()
+            
+        # Get the current active tab
+        current_tab = self.tabview.get()
+        if not current_tab:
+            return
+            
+        # Get the task name from the tab title
+        task_name = current_tab.strip().lower().replace(" ", "_")
+        
+        # Find the matching task in the controller's tasks
+        for key in self.controller.analysis_tasks().keys():
+            if key in task_name:
+                task_name = key
+                break
+                
+        # Get the markdown content directly from our stored results
+        if not hasattr(self, 'analysis_results') or task_name not in self.analysis_results:
+            messagebox.showerror("Error", "No analysis content available for download")
+            return
+            
+        # Use the original markdown content instead of trying to extract from HTML
+        content = self.analysis_results[task_name]
+        
+        # Save the content in the specified format
+        try:
+            self.controller.file_handler.save_analysis(content, file_format)
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to save file: {str(e)}")
