@@ -2,15 +2,14 @@
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 # Get the virtual environment site-packages directory
-venv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.venv')
-venv_site_packages = os.path.join(venv_path, 'lib', 'python3.10', 'site-packages')
+venv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv")
+venv_site_packages = os.path.join(venv_path, "lib", "python3.10", "site-packages")
 
 if not os.path.exists(venv_site_packages):
     # Try alternative path structure
-    venv_site_packages = os.path.join(venv_path, 'lib', 'site-packages')
+    venv_site_packages = os.path.join(venv_path, "lib", "site-packages")
     if not os.path.exists(venv_site_packages):
         print(f"Could not find site-packages directory in {venv_path}")
         sys.exit(1)
@@ -36,13 +35,24 @@ packages = [
     'markdown', 
     'docx', 
     'weasyprint', 
-    'openai'
+    'openai',
+    'PyQt6'
 ]
 
 # Initialize data collection
-datas = [('assets', 'assets'), ('.env', '.'), ('icon.ico', '.')]
+datas = [('assets', 'assets'), ('.env', '.'), ('icon.ico', '.'), (os.path.join(site_packages_path, 'PyQt6', 'Qt6', 'plugins'), 'PyQt6/Qt6/plugins')]
 binaries = []
-hiddenimports = ['PIL._tkinter_finder']
+hiddenimports = [
+    'PIL._tkinter_finder', 
+    'TkinterWeb', 
+    'PyQt6', 
+    'PyQt6.QtWidgets',
+    'PyQt6.QtWidgets.QApplication',
+    'PyQt6.QtWidgets.QFileDialog',
+    'PyQt6.QtCore'
+    'PyQt6.QtGui',
+    'PyQt6.sip',
+]
 
 # Collect all data for each package
 for package in packages:
@@ -89,11 +99,11 @@ exe = EXE(
 """
 
 # Write the spec file
-with open('simple.spec', 'w') as f:
+with open("simple.spec", "w") as f:
     f.write(spec_content)
 
 # Run PyInstaller
 print("Building application with PyInstaller...")
-subprocess.run(['pyinstaller', '--clean', 'simple.spec'])
+subprocess.run(["pyinstaller", "--clean", "simple.spec"])
 
 print("Build completed. Check the 'dist' directory for the executable.")

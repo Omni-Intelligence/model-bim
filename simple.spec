@@ -16,13 +16,24 @@ packages = [
     'markdown', 
     'docx', 
     'weasyprint', 
-    'openai'
+    'openai',
+    'PyQt6'
 ]
 
 # Initialize data collection
-datas = [('assets', 'assets'), ('.env', '.'), ('icon.ico', '.')]
+datas = [('assets', 'assets'), ('.env', '.'), ('icon.ico', '.'), (os.path.join(site_packages_path, 'PyQt6', 'Qt6', 'plugins'), 'PyQt6/Qt6/plugins')]
 binaries = []
-hiddenimports = ['PIL._tkinter_finder']
+hiddenimports = [
+    'PIL._tkinter_finder', 
+    'TkinterWeb', 
+    'PyQt6', 
+    'PyQt6.QtWidgets',
+    'PyQt6.QtWidgets.QApplication',
+    'PyQt6.QtWidgets.QFileDialog',
+    'PyQt6.QtCore'
+    'PyQt6.QtGui',
+    'PyQt6.sip',
+]
 
 # Collect all data for each package
 for package in packages:

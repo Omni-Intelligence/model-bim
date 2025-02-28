@@ -3,15 +3,21 @@ import sys
 from PyQt6.QtWidgets import QApplication, QFileDialog
 
 
+class QtFileDialog:
+    @staticmethod
+    def get_file():
+        app = QApplication.instance() or QApplication(sys.argv)
+        file_path, _ = QFileDialog.getOpenFileName(
+            None,
+            "Select a file",
+            os.path.expanduser("~"),
+            "Power BI model files (*.bim)",
+        )
+        return file_path
+
+
 def select_file():
-    app = QApplication(sys.argv)  # noqa: F841 (Needed for window setup)
-    file_path, _ = QFileDialog.getOpenFileName(
-        None,
-        "Select a file",
-        os.path.expanduser("~"),
-        # "All Allowed Files (*.pbix *.txt *.csv *.json);;Power BI files (*.pbix);;Text files (*.txt);;CSV files (*.csv);;JSON files (*.json)",
-        "Power BI model files (*.bim)",
-    )
+    file_path = QtFileDialog.get_file()
     print(file_path)
 
 

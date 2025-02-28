@@ -22,32 +22,32 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-tk python3-dev libcairo2-dev libpango1.0-dev libgdk-pixbuf2.0-dev shared-mime-info
-          # Install additional dependencies for PIL/Pillow
-          sudo apt-get install -y libtiff5-dev libjpeg-dev libopenjp2-7-dev zlib1g-dev
-          sudo apt-get install -y libfreetype6-dev liblcms2-dev libwebp-dev tcl8.6-dev tk8.6-dev python3-tk
-          sudo apt-get install -y libharfbuzz-dev libfribidi-dev libxcb1-dev
-
-      - name: Install system dependencies (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          python -m pip install --upgrade pip
-          pip install wheel
+          sudo apt-get install -y python3-tk python3-dev
 
       - name: Create .env file with OpenAI API key
         run: |
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
 
-      - name: Install dependencies
+      - name: Setup virtual environment
         run: |
+          python -m venv .venv
+          
+          # Activate virtual environment (Windows)
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            .venv\Scripts\activate
+          else
+            source .venv/bin/activate
+          fi
+          
+          # Install dependencies
           python -m pip install --upgrade pip
-          # Install Pillow first to ensure it's properly configured
-          pip install Pillow==9.5.0
-          pip install pyinstaller==5.13.0
           pip install -r requirements.txt
+          pip install pyinstaller==5.13.0
+        shell: bash
 
-      - name: Create GitHub Actions compatible build script
+      - name: Modify build_simple.py for GitHub Actions
         run: |
+          # Create a temporary version of build_simple.py that works in GitHub Actions
           cat > build_github.py << 'EOL'
           #!/usr/bin/env python3
           import os
@@ -60,20 +60,9 @@ jobs:
           site_packages = site.getsitepackages()[0]
           print(f"Using site-packages from: {site_packages}")
 
-          # Verify .env file exists
-          if os.path.exists('.env'):
-              print("Found .env file with content:")
-              with open('.env', 'r') as f:
-                  print(f.read())
-          else:
-              print("WARNING: .env file not found!")
-              with open('.env', 'w') as f:
-                  f.write("OPENAI_API_KEY=dummy_key_for_build")
-
           # Create a simple spec file
           spec_content = f"""# -*- mode: python ; coding: utf-8 -*-
           import os
-          import sys
           from PyInstaller.utils.hooks import collect_all, collect_submodules
 
           block_cipher = None
@@ -85,7 +74,7 @@ jobs:
               'PIL', 
               'customtkinter', 
               'markdown', 
-              'python-docx', 
+              'docx', 
               'weasyprint', 
               'openai'
           ]
@@ -93,33 +82,31 @@ jobs:
           # Initialize data collection
           datas = []
           
-          # Add .env file - make sure it's included
-          if os.path.exists('.env'):
-              print("Adding .env file to datas")
-              datas.append(('.env', '.'))
-          else:
-              print("WARNING: .env file not found for packaging!")
-              
-          # Add assets directory if it exists
+          # Add data files
           if os.path.exists('assets'):
               datas.append(('assets', 'assets'))
-              
-          # Add icon if it exists
+          if os.path.exists('.env'):
+              datas.append(('.env', '.'))
           if os.path.exists('icon.ico'):
               datas.append(('icon.ico', '.'))
               
           binaries = []
           
-          # Add all PIL modules explicitly
-          hiddenimports = collect_submodules('PIL')
-          hiddenimports.extend([
+          # Fix the case of the tkinterweb import - it should be lowercase
+          hiddenimports = [
               'PIL._tkinter_finder',
-              'PIL._imagingtk',
-              'PIL._imaging',
-              'PIL._imagingft',
-              'PIL.ImageTk',
-              'docx',
-          ])
+              'tkinterweb',  
+              'tkinterweb.htmlwidgets',  
+              'tkinterweb.htmlparser',
+              'tkinterweb.htmlrender',
+              'tkinterweb.htmldom',
+              'tkinterweb.htmlevents',
+              'tkinterweb.htmlcss',
+              'tkinterweb.htmlwidgets.htmlframe',  
+              'tkinterdnd2',
+              'PyQt6',
+              'PyQt6.QtWidgets',
+          ]
 
           # Collect all data for each package
           for package in packages:
@@ -130,14 +117,6 @@ jobs:
                   hiddenimports.extend(pkg_hiddenimports)
               except Exception as e:
                   print(f"Warning: Error collecting {{package}}: {{e}}")
-
-          # Add tkinter-related files
-          if sys.platform.startswith('linux'):
-              # Try to find Tcl/Tk libraries on Linux
-              tcl_tk_dirs = ['/usr/lib/tcltk', '/usr/share/tcltk', '/usr/lib/tk8.6', '/usr/lib/tcl8.6']
-              for d in tcl_tk_dirs:
-                  if os.path.exists(d):
-                      datas.append((d, os.path.basename(d)))
 
           a = Analysis(
               ['main.py'],
@@ -157,7 +136,6 @@ jobs:
 
           pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
-          # Create a single executable file
           exe = EXE(
               pyz,
               a.scripts,
@@ -178,12 +156,12 @@ jobs:
           """
 
           # Write the spec file
-          with open('github.spec', 'w') as f:
+          with open('simple.spec', 'w') as f:
               f.write(spec_content)
 
           # Run PyInstaller
           print("Building application with PyInstaller...")
-          subprocess.run(['pyinstaller', '--clean', 'github.spec'])
+          subprocess.run(['pyinstaller', '--clean', 'simple.spec'])
 
           print("Build completed. Check the 'dist' directory for the executable.")
           EOL
@@ -192,6 +170,14 @@ jobs:
 
       - name: Build executable
         run: |
+          # Activate virtual environment (Windows)
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            source .venv/Scripts/activate
+          else
+            source .venv/bin/activate
+          fi
+          
+          # Run the build script
           python build_github.py
         shell: bash
 
@@ -199,4 +185,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AnalystHub-${{ matrix.os }}
-          path: dist/AnalystHub
+          path: dist/AnalystHub*

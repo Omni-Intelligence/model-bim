@@ -4,6 +4,7 @@ from tkinter import messagebox
 import os
 import zipfile
 from datetime import datetime
+from .qt_file_dialog import QtFileDialog
 
 
 class FileHandler:
@@ -14,15 +15,16 @@ class FileHandler:
 
     @staticmethod
     def select_file():
-        result = subprocess.run(
-            [
-                sys.executable,
-                os.path.join(os.path.dirname(__file__), "qt_file_dialog.py"),
-            ],
-            capture_output=True,
-            text=True,
-        )
-        return result.stdout.strip()
+        # result = subprocess.run(
+        #     [
+        #         sys.executable,
+        #         os.path.join(os.path.dirname(__file__), "qt_file_dialog.py"),
+        #     ],
+        #     capture_output=True,
+        #     text=True,
+        # )
+        # return result.stdout.strip()
+        return QtFileDialog.get_file()
 
     @staticmethod
     def read_file(file_path):
@@ -82,8 +84,10 @@ class FileHandler:
             # Generate filename based on current date
             current_date = datetime.now().strftime("%Y-%m-%d")
             prefix = file_prefix if file_prefix else "analysis"
-            filename = os.path.join(os.path.expanduser("~"), f"{prefix}_{current_date}.txt")
-        
+            filename = os.path.join(
+                os.path.expanduser("~"), f"{prefix}_{current_date}.txt"
+            )
+
         try:
             with open(filename, "w", encoding="utf-8") as file:
                 file.write(content)
@@ -92,7 +96,7 @@ class FileHandler:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save text file: {str(e)}")
             return False
-    
+
     @staticmethod
     def save_as_doc(content, filename=None, file_prefix=None):
         """Save content as a Word document."""
@@ -101,79 +105,86 @@ class FileHandler:
             from docx.shared import Pt, RGBColor, Inches
             from docx.enum.text import WD_ALIGN_PARAGRAPH
         except ImportError:
-            messagebox.showerror("Error", "Python-docx package is required to save as DOC. Please install it with 'pip install python-docx'")
+            messagebox.showerror(
+                "Error",
+                "Python-docx package is required to save as DOC. Please install it with 'pip install python-docx'",
+            )
             return False
-            
+
         if not filename:
             # Generate filename based on current date
             current_date = datetime.now().strftime("%Y-%m-%d")
             prefix = file_prefix if file_prefix else "analysis"
-            filename = os.path.join(os.path.expanduser("~"), f"{prefix}_{current_date}.docx")
-            
+            filename = os.path.join(
+                os.path.expanduser("~"), f"{prefix}_{current_date}.docx"
+            )
+
         try:
             doc = Document()
-            style = doc.styles['Normal']
-            style.font.name = 'Calibri'
+            style = doc.styles["Normal"]
+            style.font.name = "Calibri"
             style.font.size = Pt(12)
 
             # Add logo at the top
             logo_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)), "assets", "images", "ah_logo.png"
+                os.path.dirname(os.path.dirname(__file__)),
+                "assets",
+                "images",
+                "ah_logo.png",
             )
-            
+
             # Add logo to the document
             logo_paragraph = doc.add_paragraph()
             logo_paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
             logo_run = logo_paragraph.add_run()
             logo_run.add_picture(logo_path, width=Inches(2.0))
-            
+
             # Add a space after the logo
             doc.add_paragraph()
-            
+
             # Define custom heading styles to match our CSS
-            h1_style = doc.styles['Heading 1']
-            h1_style.font.name = 'Calibri'
+            h1_style = doc.styles["Heading 1"]
+            h1_style.font.name = "Calibri"
             h1_style.font.size = Pt(28)
             h1_style.font.bold = True
             h1_style.font.color.rgb = RGBColor(202, 90, 139)  # #ca5a8b
-            
-            h2_style = doc.styles['Heading 2']
-            h2_style.font.name = 'Calibri'
+
+            h2_style = doc.styles["Heading 2"]
+            h2_style.font.name = "Calibri"
             h2_style.font.size = Pt(22)
             h2_style.font.bold = True
             h2_style.font.color.rgb = RGBColor(102, 84, 245)  # #6654f5
-            
-            h3_style = doc.styles['Heading 3']
-            h3_style.font.name = 'Calibri'
+
+            h3_style = doc.styles["Heading 3"]
+            h3_style.font.name = "Calibri"
             h3_style.font.size = Pt(18)
             h3_style.font.bold = True
             h3_style.font.color.rgb = RGBColor(102, 84, 245)  # #6654f5
-            
-            
+
             # Split content by lines and add to document
-            for line in content.split('\n'):
-                if line.startswith('# '):
+            for line in content.split("\n"):
+                if line.startswith("# "):
                     doc.add_heading(line[2:], level=1)
-                elif line.startswith('## '):
+                elif line.startswith("## "):
                     doc.add_heading(line[3:], level=2)
-                elif line.startswith('### '):
+                elif line.startswith("### "):
                     doc.add_heading(line[4:], level=3)
-                elif line.startswith('- '):
-                    doc.add_paragraph(line[2:], style='List Bullet')
-                elif line.startswith('1. '):
-                    doc.add_paragraph(line[3:], style='List Number')
-                elif line.strip() == '':
-                    doc.add_paragraph()    
+                elif line.startswith("- "):
+                    doc.add_paragraph(line[2:], style="List Bullet")
+                elif line.startswith("1. "):
+                    doc.add_paragraph(line[3:], style="List Number")
+                elif line.strip() == "":
+                    doc.add_paragraph()
                 else:
                     doc.add_paragraph(line)
-                    
+
             doc.save(filename)
             messagebox.showinfo("Success", f"File saved to {filename}")
             return True
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save Word document: {str(e)}")
             return False
-    
+
     @staticmethod
     def save_as_pdf(content, filename=None, file_prefix=None):
         """Save content as a PDF file."""
@@ -181,38 +192,50 @@ class FileHandler:
             import weasyprint
             import base64
         except ImportError:
-            messagebox.showerror("Error", "WeasyPrint package is required to save as PDF. Please install it with 'pip install weasyprint'")
+            messagebox.showerror(
+                "Error",
+                "WeasyPrint package is required to save as PDF. Please install it with 'pip install weasyprint'",
+            )
             return False
-            
+
         if not filename:
             # Generate filename based on current date
             current_date = datetime.now().strftime("%Y-%m-%d")
             prefix = file_prefix if file_prefix else "analysis"
-            filename = os.path.join(os.path.expanduser("~"), f"{prefix}_{current_date}.pdf")
-            
+            filename = os.path.join(
+                os.path.expanduser("~"), f"{prefix}_{current_date}.pdf"
+            )
+
         try:
             # Convert markdown to HTML
             import markdown2
+
             html_body = markdown2.markdown(content, extras=["fenced-code-blocks"])
-            
+
             # Get the CSS file path - same approach as in ui.py
             css_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)), "assets", "css", "analysis.css"
+                os.path.dirname(os.path.dirname(__file__)),
+                "assets",
+                "css",
+                "analysis.css",
             )
-            
+
             # Get the logo path
             logo_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)), "assets", "images", "ah_logo.png"
+                os.path.dirname(os.path.dirname(__file__)),
+                "assets",
+                "images",
+                "ah_logo.png",
             )
-            
+
             # Convert logo path to data URI for embedding in HTML
             with open(logo_path, "rb") as img_file:
-                logo_data = base64.b64encode(img_file.read()).decode('utf-8')
-            
+                logo_data = base64.b64encode(img_file.read()).decode("utf-8")
+
             # Read the CSS file
             with open(css_path, "r", encoding="utf-8") as css_file:
                 custom_css = css_file.read()
-            
+
             styled_html = f"""
             <!DOCTYPE html>
             <html>
@@ -250,7 +273,7 @@ class FileHandler:
             </body>
             </html>
             """
-            
+
             # Generate PDF
             weasyprint.HTML(string=styled_html).write_pdf(filename)
             messagebox.showinfo("Success", f"File saved to {filename}")
