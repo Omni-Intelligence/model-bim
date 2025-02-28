@@ -26,7 +26,7 @@ class Controller:
 
         return True
 
-    def process_file(self, file_path):
+    def process_file(self, file_path, model="gpt-4o-mini"):
         if not self.file_handler.is_valid_file_type(file_path):
             # messagebox.showerror("Error", "Unsupported file type")
             # return None
@@ -42,7 +42,7 @@ class Controller:
             if content:
                 try:
                     formatTask = "\nAvoid generating Table of Contents. Please respond with proper well-structured Markdown format."
-                    result = self.ai_analyzer.analyze(task + formatTask, content)
+                    result = self.ai_analyzer.analyze(task + formatTask, content, model)
                     yield task_name, result
                 except Exception as e:
                     logging.getLogger("app").error(
@@ -68,3 +68,12 @@ class Controller:
     def reset(self):
         # Reset any state if needed
         pass
+
+    @staticmethod
+    def _ai_models():
+        return [
+            "gpt-4o-mini",
+            "gpt-4o",
+            "o3-mini",
+            "o1",
+        ]

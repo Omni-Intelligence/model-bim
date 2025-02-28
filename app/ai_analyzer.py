@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from dotenv import load_dotenv
 import openai
 from tkinter import messagebox
@@ -7,32 +8,40 @@ from tkinter import messagebox
 
 class AIAnalyzer:
     def __init__(self):
-        load_dotenv()
+        if getattr(sys, "frozen", False):
+            # If the application is run as a bundle (PyInstaller executable)
+            env_path = os.path.join(sys._MEIPASS, ".env")
+        else:
+            application_path = os.path.dirname(os.path.abspath(__file__))
+            env_path = os.path.join(application_path, ".env")
+
+        load_dotenv(env_path)
         openai.api_key = os.getenv("OPENAI_API_KEY")
 
-    def analyze(self, task, content):
+    def analyze(self, task, content, model="gpt-4o-mini"):
         logging.getLogger("app").info(f"Analyzing with ChatGPT: {task}")
         try:
-            client = openai.OpenAI()
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": task,
-                    },
-                    {
-                        "role": "user",
-                        "content": f"Please analyze this for me:\n{content}",
-                    },
-                ],
-            )
+            # client = openai.OpenAI()
+            # response = client.chat.completions.create(
+            #     model=model,
+            #     messages=[
+            #         {
+            #             "role": "developer" if model in ["o1", "o3-mini"] else "system",
+            #             "content": task,
+            #         },
+            #         {
+            #             "role": "user",
+            #             "content": f"Please analyze this for me:\n{content}",
+            #         },
+            #     ],
+            # )
 
-            logging.getLogger("app").info("Response generated")
+            # logging.getLogger("app").info("Response generated")
+            # print("model:", model)
 
-            return response.choices[0].message.content
+            # return response.choices[0].message.content
 
-            # return self._return_test_response()
+            return self._return_test_response()
 
         except Exception as e:
             messagebox.showerror(

@@ -46,3 +46,13 @@ The provided data model extract represents a Power BI data model, revealing its 
 ### Conclusion
 
 In summary, the provided Power BI data model demonstrates a well-structured layout aimed at retail sales analysis. It includes comprehensive data tables, custom query functions, various measures, and complex relationships necessary to support detailed reporting and insights. Its use of DAX for metrics calculation combined with imported data elaborates its capability for performing in-depth analysis concerning performance and business operations.
+
+### Data Sources Table
+
+| Sheet Name       | Description                        |
+|------------------|------------------------------------|
+| `Customer_Data`  | Contains customer information      |
+| `Location_Data`  | Contains location information      |
+| `Product_Data`   | Contains product information       |
+| `Sales_Data`     | Contains sales transactions        |
+| `Salespeople_Data` | Contains salespeople information  |

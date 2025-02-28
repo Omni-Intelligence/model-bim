@@ -1,5 +1,3 @@
-import subprocess
-import sys
 from tkinter import messagebox
 import os
 import zipfile
@@ -15,15 +13,6 @@ class FileHandler:
 
     @staticmethod
     def select_file():
-        # result = subprocess.run(
-        #     [
-        #         sys.executable,
-        #         os.path.join(os.path.dirname(__file__), "qt_file_dialog.py"),
-        #     ],
-        #     capture_output=True,
-        #     text=True,
-        # )
-        # return result.stdout.strip()
         return QtFileDialog.get_file()
 
     @staticmethod
@@ -207,10 +196,20 @@ class FileHandler:
             )
 
         try:
-            # Convert markdown to HTML
             import markdown2
 
-            html_body = markdown2.markdown(content, extras=["fenced-code-blocks"])
+            html_body = markdown2.markdown(
+                content,
+                extras=[
+                    "fenced-code-blocks",
+                    "tables",
+                    "break-on-newline",
+                    "code-friendly",
+                    "numbering",
+                    "cuddled-lists",
+                    "code-color",
+                ],
+            )
 
             # Get the CSS file path - same approach as in ui.py
             css_path = os.path.join(
@@ -245,7 +244,6 @@ class FileHandler:
                 <style>
                     {custom_css}
 
-                    /* Override background color */
                     body {{
                         background-color: white !important;
                     }}

@@ -1,7 +1,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap");
 
 body {
-  font-family: "Poppins", "Arial", sans-serif;
+  font-family: "Poppins", "Colibri", "Arial", sans-serif;
   color: #0b0c18;
   background-color: #f5f5f5;
   padding: 20px;
@@ -12,6 +12,7 @@ h1,
 h2,
 h3,
 h4 {
+  font-family: "Poppins", "Colibri", "Arial", sans-serif;
   margin-top: 0;
   margin-bottom: 1em;
 }
@@ -67,7 +68,20 @@ pre {
 }
 
 code {
-  font-size: 0.9em;
+    background-color: #ebebeb;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 0.9em;
+}
+
+pre code {
+    display: block;
+    background-color: #ebebeb;
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: #0b0c18;
+    overflow-x: auto;
 }
 
 a {
@@ -91,6 +105,10 @@ ol {
   margin-bottom: 1em;
 }
 
+ul li, ol li {
+  margin-bottom: 0.5em;
+}
+
 .section {
   border-bottom: 1px solid #ebebeb;
   padding-bottom: 20px;
@@ -109,4 +127,49 @@ ol {
 
 .button:hover {
   background-color: #ff6900;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+    background-color: #ffffff;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+th, td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ebebeb;
+}
+
+th {
+    background-color: #f2b347;
+    color: #ffffff;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.9em;
+}
+
+tr:nth-child(even) {
+    background-color: #f5f5f5;
+}
+
+tr:hover {
+    background-color: #ebebeb;
+}
+
+td code {
+    background-color: #f0f0f0;
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: #0b0c18;
+    font-weight: 600;
+    font-size: 0.9em;
+}
+
+hr {
+  margin: 1em 0;
 }
