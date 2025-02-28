@@ -1,7 +1,7 @@
 import subprocess
 import sys
 import time
-from tkinter import messagebox
+from tkinter import Tk, filedialog, messagebox
 import os
 import zipfile
 
@@ -14,20 +14,13 @@ class FileHandler:
 
     @staticmethod
     def select_file():
-        def get_dialog_script_path():
-            if getattr(sys, "frozen", False):
-                # Running in a PyInstaller bundle
-                return os.path.join(sys._MEIPASS, "qt_file_dialog.py")
-            else:
-                # Running in normal Python environment
-                return os.path.join(os.path.dirname(__file__), "qt_file_dialog.py")
-
-        result = subprocess.run(
-            [sys.executable, get_dialog_script_path()],
-            capture_output=True,
-            text=True,
+        file_path = filedialog.askopenfilename(
+            title="Select a Power BI Model file",
+            initialdir=os.path.expanduser("~"),
+            filetypes=[("Power BI Model files", "*.bim")],
         )
-        return result.stdout.strip()
+
+        return file_path if file_path else ""
 
     @staticmethod
     def read_file(file_path):

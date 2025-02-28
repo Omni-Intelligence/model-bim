@@ -1,30 +1,11 @@
-#!/usr/bin/env python3
-import os
-import subprocess
-import sys
-
-# Get the virtual environment site-packages directory
-venv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".venv")
-venv_site_packages = os.path.join(venv_path, "lib", "python3.10", "site-packages")
-
-if not os.path.exists(venv_site_packages):
-    # Try alternative path structure
-    venv_site_packages = os.path.join(venv_path, "lib", "site-packages")
-    if not os.path.exists(venv_site_packages):
-        print(f"Could not find site-packages directory in {venv_path}")
-        sys.exit(1)
-
-print(f"Using site-packages from: {venv_site_packages}")
-
-# Create a simple spec file
-spec_content = f"""# -*- mode: python ; coding: utf-8 -*-
+# -*- mode: python ; coding: utf-8 -*-
 import os
 from PyInstaller.utils.hooks import collect_all
 
 block_cipher = None
 
 # Collect all packages from the virtual environment
-site_packages_path = r'{venv_site_packages}'
+site_packages_path = r'/var/www/html/python/analysthub/.venv/lib/python3.10/site-packages'
 
 # Create a list of all packages to include
 packages = [
@@ -60,7 +41,7 @@ a = Analysis(
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
-    hooksconfig={{}},
+    hooksconfig={},
     runtime_hooks=[],
     excludes=[],
     win_no_prefer_redirects=False,
@@ -88,14 +69,3 @@ exe = EXE(
     console=True,  # Set to True for debugging
     icon=['icon.ico'],
 )
-"""
-
-# Write the spec file
-with open("simple.spec", "w") as f:
-    f.write(spec_content)
-
-# Run PyInstaller
-print("Building application with PyInstaller...")
-subprocess.run(["pyinstaller", "--clean", "simple.spec"])
-
-print("Build completed. Check the 'dist' directory for the executable.")

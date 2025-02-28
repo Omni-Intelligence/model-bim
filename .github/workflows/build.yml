@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, macos-latest]
 
     steps:
       - name: Checkout repository
@@ -18,205 +18,20 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install system dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-tk python3-dev
-
       - name: Create .env file with OpenAI API key
         run: |
           echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > .env
 
-      - name: Setup virtual environment
-        run: |
-          python -m venv .venv
-          
-          # Activate virtual environment (Windows)
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            .venv\Scripts\activate
-          else
-            source .venv/bin/activate
-          fi
-          
-          # Install dependencies
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pyinstaller==5.13.0
-        shell: bash
-
-      - name: Modify build_simple.py for GitHub Actions
-        run: |
-          # Create a temporary version of build_simple.py that works in GitHub Actions
-          cat > build_github.py << 'EOL'
-          #!/usr/bin/env python3
-          import os
-          import subprocess
-          import sys
-          import site
-          from pathlib import Path
-
-          # Get site-packages directory from the current Python environment
-          site_packages = site.getsitepackages()[0]
-          print(f"Using site-packages from: {site_packages}")
-
-          # Create a simple spec file
-          spec_content = f"""# -*- mode: python ; coding: utf-8 -*-
-          import os
-          from PyInstaller.utils.hooks import collect_all, collect_submodules
-
-          block_cipher = None
-
-          # Create a list of all packages to include
-          packages = [
-              'tkinterweb', 
-              'tkinterdnd2', 
-              'PIL', 
-              'customtkinter', 
-              'markdown', 
-              'docx', 
-              'weasyprint', 
-              'openai'
-          ]
-
-          # Initialize data collection
-          datas = []
-          
-          # Add data files
-          if os.path.exists('assets'):
-              datas.append(('assets', 'assets'))
-          if os.path.exists('.env'):
-              datas.append(('.env', '.'))
-          if os.path.exists('icon.ico'):
-              datas.append(('icon.ico', '.'))
-              
-          binaries = []
-          
-          # Fix the case of the tkinterweb import - it should be lowercase
-          hiddenimports = [
-              'PIL._tkinter_finder',
-              'tkinterweb',  
-              'tkinterweb.htmlwidgets',  
-              'tkinterweb.htmlparser',
-              'tkinterweb.htmlrender',
-              'tkinterweb.htmldom',
-              'tkinterweb.htmlevents',
-              'tkinterweb.htmlcss',
-              'tkinterweb.htmlwidgets.htmlframe',  
-              'tkinterdnd2',
-              'PyQt6',
-              'PyQt6.QtWidgets',
-          ]
-
-          # Collect all data for each package
-          for package in packages:
-              try:
-                  pkg_datas, pkg_binaries, pkg_hiddenimports = collect_all(package)
-                  datas.extend(pkg_datas)
-                  binaries.extend(pkg_binaries)
-                  hiddenimports.extend(pkg_hiddenimports)
-              except Exception as e:
-                  print(f"Warning: Error collecting {{package}}: {{e}}")
-
-          a = Analysis(
-              ['main.py'],
-              pathex=['{site_packages}'],  # Add site-packages to path
-              binaries=binaries,
-              datas=datas,
-              hiddenimports=hiddenimports,
-              hookspath=[],
-              hooksconfig={{}},
-              runtime_hooks=[],
-              excludes=[],
-              win_no_prefer_redirects=False,
-              win_private_assemblies=False,
-              cipher=block_cipher,
-              noarchive=False,
-          )
-
-          pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-          exe = EXE(
-              pyz,
-              a.scripts,
-              a.binaries,
-              a.zipfiles,
-              a.datas,
-              [],
-              name='AnalystHub',
-              debug=False,
-              bootloader_ignore_signals=False,
-              strip=False,
-              upx=True,
-              upx_exclude=[],
-              runtime_tmpdir=None,
-              console=True,
-              collect_all=True,
-              icon='icon.ico' if os.path.exists('icon.ico') else None,
-          )
-          """
-
-          # Write the spec file
-          with open('simple.spec', 'w') as f:
-              f.write(spec_content)
-
-          # Run PyInstaller
-          print("Building application with PyInstaller...")
-          subprocess.run(['pyinstaller', '--clean', 'simple.spec'])
-
-          print("Build completed. Check the 'dist' directory for the executable.")
-          EOL
-          chmod +x build_github.py
-        shell: bash
+      - name: Install dependencies
+        run: pip install -r requirements.txt pyinstaller python-dotenv
 
       - name: Build executable
         run: |
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            source .venv/Scripts/activate
-          else
-            source .venv/bin/activate
-          fi
-          
-          # Clean dist directory first
-          rm -rf dist/*
-          
-          # Run the build script with error checking
-          python build_github.py
-          if [ $? -ne 0 ]; then
-            echo "Build failed"
-            exit 1
-          fi
-          
-          # Create platform-specific directory
-          mkdir -p release
-          
-          # Move and organize files
-          if [ "${{ runner.os }}" == "Windows" ]; then
-            if [ -f "dist/AnalystHub.exe" ]; then
-              mv dist/AnalystHub.exe release/
-              # Copy any necessary DLLs or resources
-              cp -r dist/*.dll release/ 2>/dev/null || true
-              cp -r dist/assets release/ 2>/dev/null || true
-            else
-              echo "Expected executable not found"
-              exit 1
-            fi
-          else
-            if [ -f "dist/AnalystHub" ]; then
-              mv dist/AnalystHub release/
-              # Copy any necessary resources
-              cp -r dist/assets release/ 2>/dev/null || true
-            else
-              echo "Expected executable not found"
-              exit 1
-            fi
-          fi
+          pyinstaller simple.spec
         shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AnalystHub-${{ matrix.os }}
-          path: release
-          if-no-files-found: error
-          retention-days: 5
+          name: executable-${{ matrix.os }}
+          path: dist/*
