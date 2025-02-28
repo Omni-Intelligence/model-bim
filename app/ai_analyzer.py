@@ -19,29 +19,30 @@ class AIAnalyzer:
         openai.api_key = os.getenv("OPENAI_API_KEY")
 
     def analyze(self, task, content, model="gpt-4o-mini"):
-        logging.getLogger("app").info(f"Analyzing with ChatGPT: {task}")
+        # logging.getLogger("app").info(f"Analyzing with ChatGPT: {task}")
         try:
-            # client = openai.OpenAI()
-            # response = client.chat.completions.create(
-            #     model=model,
-            #     messages=[
-            #         {
-            #             "role": "developer" if model in ["o1", "o3-mini"] else "system",
-            #             "content": task,
-            #         },
-            #         {
-            #             "role": "user",
-            #             "content": f"Please analyze this for me:\n{content}",
-            #         },
-            #     ],
-            # )
+            client = openai.OpenAI()
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {
+                        "role": "developer" if model in ["o1", "o3-mini"] else "system",
+                        "content": task
+                        + "Generated response must be compatible with markdown2 for pretty rendering, so avoid unexpected characters and wrap code snippets carefully.",
+                    },
+                    {
+                        "role": "user",
+                        "content": f"Please analyze this for me:\n{content}",
+                    },
+                ],
+            )
 
             # logging.getLogger("app").info("Response generated")
-            # print("model:", model)
+            print("model:", model)
 
-            # return response.choices[0].message.content
+            return response.choices[0].message.content
 
-            return self._return_test_response()
+            # return self._return_test_response()
 
         except Exception as e:
             messagebox.showerror(

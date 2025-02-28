@@ -28,16 +28,12 @@ class Controller:
 
     def process_file(self, file_path, model="gpt-4o-mini"):
         if not self.file_handler.is_valid_file_type(file_path):
-            # messagebox.showerror("Error", "Unsupported file type")
-            # return None
             raise ValueError("Unsupported file type")
 
         content = self.file_handler.read_file(file_path)
         if not content:
-            # return None
             raise ValueError("Could not read file content")
 
-        # def process_tasks():
         for task_name, task in self.analysis_tasks().items():
             if content:
                 try:
@@ -49,8 +45,6 @@ class Controller:
                         f"Error processing task {task_name}: {str(e)}"
                     )
                     yield task_name, f"Analysis failed: {str(e)}"
-
-        # return process_tasks()
 
     @staticmethod
     def analysis_tasks():

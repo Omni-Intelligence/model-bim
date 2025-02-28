@@ -151,6 +151,7 @@ jobs:
               upx_exclude=[],
               runtime_tmpdir=None,
               console=True,
+              collect_all=True,
               icon='icon.ico' if os.path.exists('icon.ico') else None,
           )
           """
@@ -170,19 +171,52 @@ jobs:
 
       - name: Build executable
         run: |
-          # Activate virtual environment (Windows)
           if [ "${{ runner.os }}" == "Windows" ]; then
             source .venv/Scripts/activate
           else
             source .venv/bin/activate
           fi
           
-          # Run the build script
+          # Clean dist directory first
+          rm -rf dist/*
+          
+          # Run the build script with error checking
           python build_github.py
+          if [ $? -ne 0 ]; then
+            echo "Build failed"
+            exit 1
+          fi
+          
+          # Create platform-specific directory
+          mkdir -p release
+          
+          # Move and organize files
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            if [ -f "dist/AnalystHub.exe" ]; then
+              mv dist/AnalystHub.exe release/
+              # Copy any necessary DLLs or resources
+              cp -r dist/*.dll release/ 2>/dev/null || true
+              cp -r dist/assets release/ 2>/dev/null || true
+            else
+              echo "Expected executable not found"
+              exit 1
+            fi
+          else
+            if [ -f "dist/AnalystHub" ]; then
+              mv dist/AnalystHub release/
+              # Copy any necessary resources
+              cp -r dist/assets release/ 2>/dev/null || true
+            else
+              echo "Expected executable not found"
+              exit 1
+            fi
+          fi
         shell: bash
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: AnalystHub-${{ matrix.os }}
-          path: dist/AnalystHub*
+          path: release
+          if-no-files-found: error
+          retention-days: 5

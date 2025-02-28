@@ -40,7 +40,7 @@ packages = [
 ]
 
 # Initialize data collection
-datas = [('assets', 'assets'), ('.env', '.'), ('icon.ico', '.'), (os.path.join(site_packages_path, 'PyQt6', 'Qt6', 'plugins'), 'PyQt6/Qt6/plugins')]
+datas = [('assets', 'assets'), ('.env', '.'), ('icon.ico', '.'), ('app/qt_file_dialog.py', '.'), (os.path.join(site_packages_path, 'PyQt6', 'Qt6', 'plugins'), 'PyQt6/Qt6/plugins')]
 binaries = []
 hiddenimports = [
     'PIL._tkinter_finder', 

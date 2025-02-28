@@ -283,7 +283,6 @@ class GUI:
             parent,
             horizontal_scrollbar=False,
             vertical_scrollbar=False,
-            messages_enabled=False,
         )
         self._setup_custom_scrollbar(html_frame, parent)
         html_frame.pack(fill="both", expand=True)
@@ -343,10 +342,18 @@ class GUI:
         <html>
         <head>
             <meta charset="UTF-8">
-            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
             <style>
                 {open(css_path, "r", encoding="utf-8").read()}
             </style>
+            <script>
+            // Force wait for fonts to load
+            document.addEventListener('DOMContentLoaded', function() {{
+                setTimeout(function() {{
+                    document.body.style.opacity = '1';
+                }}, 200);
+            }});
+        </script>
         </head>
         <body>
             {
@@ -367,8 +374,7 @@ class GUI:
         </html>
         """
 
-        # Load the HTML with base URL for fonts
-        widget.load_html(html_content, base_url="https://fonts.googleapis.com/css2")
+        widget.load_html(html_content)
 
     def reset_interface(self):
         # Clear and hide analysis section

@@ -1,8 +1,9 @@
+import subprocess
+import sys
+import time
 from tkinter import messagebox
 import os
 import zipfile
-from datetime import datetime
-from .qt_file_dialog import QtFileDialog
 
 
 class FileHandler:
@@ -13,7 +14,20 @@ class FileHandler:
 
     @staticmethod
     def select_file():
-        return QtFileDialog.get_file()
+        def get_dialog_script_path():
+            if getattr(sys, "frozen", False):
+                # Running in a PyInstaller bundle
+                return os.path.join(sys._MEIPASS, "qt_file_dialog.py")
+            else:
+                # Running in normal Python environment
+                return os.path.join(os.path.dirname(__file__), "qt_file_dialog.py")
+
+        result = subprocess.run(
+            [sys.executable, get_dialog_script_path()],
+            capture_output=True,
+            text=True,
+        )
+        return result.stdout.strip()
 
     @staticmethod
     def read_file(file_path):
@@ -70,11 +84,9 @@ class FileHandler:
     def save_as_txt(content, filename=None, file_prefix=None):
         """Save content as a text file."""
         if not filename:
-            # Generate filename based on current date
-            current_date = datetime.now().strftime("%Y-%m-%d")
             prefix = file_prefix if file_prefix else "analysis"
             filename = os.path.join(
-                os.path.expanduser("~"), f"{prefix}_{current_date}.txt"
+                os.path.expanduser("~"), f"{prefix}_{int(time.time())}.txt"
             )
 
         try:
@@ -101,11 +113,9 @@ class FileHandler:
             return False
 
         if not filename:
-            # Generate filename based on current date
-            current_date = datetime.now().strftime("%Y-%m-%d")
             prefix = file_prefix if file_prefix else "analysis"
             filename = os.path.join(
-                os.path.expanduser("~"), f"{prefix}_{current_date}.docx"
+                os.path.expanduser("~"), f"{prefix}_{int(time.time())}.docx"
             )
 
         try:
@@ -188,11 +198,9 @@ class FileHandler:
             return False
 
         if not filename:
-            # Generate filename based on current date
-            current_date = datetime.now().strftime("%Y-%m-%d")
             prefix = file_prefix if file_prefix else "analysis"
             filename = os.path.join(
-                os.path.expanduser("~"), f"{prefix}_{current_date}.pdf"
+                os.path.expanduser("~"), f"{prefix}_{int(time.time())}.pdf"
             )
 
         try:
@@ -240,7 +248,7 @@ class FileHandler:
             <html>
             <head>
                 <meta charset="UTF-8">
-                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
                 <style>
                     {custom_css}
 
