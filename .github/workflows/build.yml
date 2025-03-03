@@ -27,7 +27,7 @@ jobs:
 
       - name: Build executable
         run: |
-          pyinstaller simple.spec
+          pyinstaller build.spec
         shell: bash
 
       - name: Upload artifact

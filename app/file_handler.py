@@ -1,7 +1,5 @@
-import subprocess
-import sys
 import time
-from tkinter import Tk, filedialog, messagebox
+from tkinter import filedialog, messagebox
 import os
 import zipfile
 
