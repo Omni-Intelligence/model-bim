@@ -78,15 +78,17 @@ packages = [
     'dotenv'
 ]
 
-# Make sure assets directory exists
+# Handle assets directory
+datas = []
 assets_dir = os.path.join(project_dir, 'assets')
-if not os.path.exists(assets_dir):
-    raise FileNotFoundError(f"Assets directory not found at {{assets_dir}}")
-
-# Data files to include
-datas = [
-    (os.path.join(project_dir, 'assets'), 'assets'),
-]
+if os.path.exists(assets_dir):
+    print(f"Including assets directory: {{assets_dir}}")
+    datas.append((assets_dir, 'assets'))
+else:
+    print(f"Warning: Assets directory not found at {{assets_dir}}")
+    # Create empty assets directory if it doesn't exist
+    os.makedirs(assets_dir, exist_ok=True)
+    datas.append((assets_dir, 'assets'))
 
 # Add .env file if it exists
 env_path = os.path.join(project_dir, '.env')
