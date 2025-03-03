@@ -2,6 +2,7 @@ import time
 from tkinter import filedialog, messagebox
 import os
 import zipfile
+import re
 
 
 class FileHandler:
@@ -91,11 +92,13 @@ class FileHandler:
 
     @staticmethod
     def save_as_doc(content, filename=None, file_prefix=None):
-        """Save content as a Word document."""
+        """Save content as a Word document with improved code block formatting."""
         try:
             from docx import Document
             from docx.shared import Pt, RGBColor, Inches
             from docx.enum.text import WD_ALIGN_PARAGRAPH
+            from docx.oxml.ns import qn
+            from docx.oxml import OxmlElement
         except ImportError:
             messagebox.showerror(
                 "Error",
@@ -151,8 +154,212 @@ class FileHandler:
             h3_style.font.bold = True
             h3_style.font.color.rgb = RGBColor(102, 84, 245)  # #6654f5
 
-            # Split content by lines and add to document
-            for line in content.split("\n"):
+            # Create code block style
+            try:
+                code_style = doc.styles.add_style("CodeBlock", 1)
+                code_style.font.name = "Consolas"
+                code_style.font.size = Pt(10)
+                code_style.paragraph_format.space_before = Pt(6)
+                code_style.paragraph_format.space_after = Pt(6)
+                code_style.paragraph_format.keep_together = True
+            except:
+                # Style might already exist
+                code_style = doc.styles["Normal"]
+
+            def process_formatted_text(text, paragraph=None):
+                if paragraph is None:
+                    paragraph = doc.add_paragraph()
+
+                text = text.replace(r"\*", "____ESCAPED_ASTERISK____")
+
+                # First pass: process text for formatting
+                current_position = 0
+                remaining_text = text
+                found_formatting = False
+
+                # Bold pattern: Match anything between two asterisks
+                bold_pattern = re.compile(r"\*\*(.*?)\*\*")
+
+                # Process text for bold formatting
+                while True:
+                    bold_match = bold_pattern.search(remaining_text)
+                    if not bold_match:
+                        break
+
+                    # Add text before formatting mark
+                    if bold_match.start() > 0:
+                        paragraph.add_run(remaining_text[: bold_match.start()])
+
+                    # Add formatted text
+                    bold_text = bold_match.group(1)
+                    bold_run = paragraph.add_run(bold_text)
+                    bold_run.bold = True
+
+                    # Update remaining text
+                    remaining_text = remaining_text[bold_match.end() :]
+                    found_formatting = True
+
+                # Add any remaining text
+                if remaining_text:
+                    paragraph.add_run(remaining_text)
+
+                # If no formatting found, just set the text directly
+                if not found_formatting and not paragraph.runs:
+                    # Replace any temporary placeholders
+                    text = text.replace("____ESCAPED_ASTERISK____", "*")
+                    paragraph.text = text
+
+                return paragraph
+
+            # Helper function to create and format table
+            def create_table_from_markdown(table_lines):
+                # Parse the markdown table
+                rows = []
+                for line in table_lines:
+                    # Skip separator lines (---|---|---)
+                    if re.match(r"^[\s|]*[-:]+[\s|]*$", line.strip()):
+                        continue
+                    # Process cells in the row
+                    cells = re.findall(r"\|(.*?)(?=\||$)", line + "|")
+                    # Clean up cells and remove empty trailing cell if present
+                    cells = [cell.strip() for cell in cells]
+                    if cells and cells[-1] == "":
+                        cells.pop()
+                    if cells:  # Only add non-empty rows
+                        rows.append(cells)
+
+                if not rows:
+                    return None
+
+                # Create the Word table
+                table = doc.add_table(rows=len(rows), cols=len(rows[0]))
+                table.style = "Table Grid"
+
+                # Format the table
+                for i, row in enumerate(rows):
+                    for j, cell in enumerate(row):
+                        if j < len(table.rows[i].cells):
+                            cell_text = cell.strip()
+                            cell_paragraph = table.rows[i].cells[j].paragraphs[0]
+
+                            # Use our improved text processing function for cell content
+                            process_formatted_text(cell_text, cell_paragraph)
+
+                            # Make header row bold
+                            if i == 0:
+                                for run in cell_paragraph.runs:
+                                    run.bold = True
+
+                return table
+
+            # Helper function to create a code block with syntax highlighting
+            def create_code_block(code_lines, language):
+                # Create a bordered container for the code block
+                code_container = doc.add_paragraph()
+
+                # Add a light gray shaded background for the code block
+                shading_element = OxmlElement("w:shd")
+                shading_element.set(qn("w:fill"), "F5F5F5")  # Light gray background
+
+                # Add a border to the paragraph
+                def set_border(paragraph):
+                    p = paragraph._p
+                    pPr = p.get_or_add_pPr()
+                    pBdr = OxmlElement("w:pBdr")
+
+                    # Add border on all sides
+                    for side in ["top", "left", "bottom", "right"]:
+                        border = OxmlElement(f"w:{side}")
+                        border.set(qn("w:val"), "single")
+                        border.set(qn("w:sz"), "4")  # Border width in 1/8 points
+                        border.set(qn("w:space"), "0")
+                        border.set(qn("w:color"), "CCCCCC")  # Light gray border
+                        pBdr.append(border)
+
+                    pPr.append(pBdr)
+
+                    # Add shading
+                    pPr.append(shading_element)
+
+                # Create a language label if specified
+                if language and language.strip() != "":
+                    lang_para = doc.add_paragraph()
+                    lang_run = lang_para.add_run(f"{language.strip()}")
+                    lang_run.bold = True
+                    lang_run.font.size = Pt(9)
+                    lang_run.font.color.rgb = RGBColor(70, 70, 70)  # Dark gray
+
+                set_border(code_container)
+
+                # Add the code content with monospace font
+                for line in code_lines:
+                    code_para = doc.add_paragraph(style="CodeBlock")
+                    code_run = code_para.add_run(line)
+                    code_run.font.name = "Consolas"  # Monospace font
+                    code_run.font.size = Pt(10)
+
+                    # Add paragraph shading
+                    set_border(code_para)
+
+                # Add a space after the code block
+                doc.add_paragraph()
+
+            # Pre-process content to handle specific patterns
+            processed_content = content
+            # Replace any escaped asterisks or problematic patterns if needed
+
+            # Split into lines and process
+            lines = processed_content.split("\n")
+            line_index = 0
+            table_lines = []
+            in_table = False
+            code_block = False
+            code_language = ""
+            code_lines = []
+
+            while line_index < len(lines):
+                line = lines[line_index]
+
+                # Check for code blocks
+                if line.startswith("```"):
+                    if not code_block:
+                        # Start of code block
+                        code_block = True
+                        code_language = line[3:].strip()  # Extract language identifier
+                        code_lines = []
+                        line_index += 1
+                        continue
+                    else:
+                        # End of code block
+                        code_block = False
+                        create_code_block(code_lines, code_language)
+                        line_index += 1
+                        continue
+
+                # If in code block, collect lines
+                if code_block:
+                    code_lines.append(line)
+                    line_index += 1
+                    continue
+
+                # Check if line might be part of a table
+                if "|" in line and not line.startswith("```"):
+                    # Start collecting table lines
+                    if not in_table:
+                        in_table = True
+                        table_lines = [line]
+                    else:
+                        table_lines.append(line)
+                    line_index += 1
+                    continue
+                elif in_table:
+                    # End of table reached, process it
+                    in_table = False
+                    create_table_from_markdown(table_lines)
+                    doc.add_paragraph()  # Add space after table
+                    table_lines = []
+
+                # Process normal line
                 if line.startswith("# "):
                     doc.add_heading(line[2:], level=1)
                 elif line.startswith("## "):
@@ -160,13 +367,30 @@ class FileHandler:
                 elif line.startswith("### "):
                     doc.add_heading(line[4:], level=3)
                 elif line.startswith("- "):
-                    doc.add_paragraph(line[2:], style="List Bullet")
+                    # Process formatted text in list items too
+                    paragraph = doc.add_paragraph(style="List Bullet")
+                    process_formatted_text(line[2:], paragraph)
+                elif line.startswith("* "):
+                    paragraph = doc.add_paragraph(style="List Bullet")
+                    process_formatted_text(line[2:], paragraph)
                 elif line.startswith("1. "):
-                    doc.add_paragraph(line[3:], style="List Number")
+                    paragraph = doc.add_paragraph(style="List Number")
+                    process_formatted_text(line[3:], paragraph)
                 elif line.strip() == "":
                     doc.add_paragraph()
                 else:
-                    doc.add_paragraph(line)
+                    # Process the line with our improved formatter
+                    process_formatted_text(line)
+
+                line_index += 1
+
+            # Process any remaining table lines
+            if table_lines:
+                create_table_from_markdown(table_lines)
+
+            # Handle any remaining code block
+            if code_block and code_lines:
+                create_code_block(code_lines, code_language)
 
             doc.save(filename)
             messagebox.showinfo("Success", f"File saved to {filename}")
