@@ -11,20 +11,28 @@ class Controller:
         self.ai_analyzer = ai_analyzer or AIAnalyzer()
 
     def check_env_file(self):
-        if not os.path.exists(".env"):
-            api_key = simpledialog.askstring(
-                "API Key", "Please enter your OpenAI API key:"
-            )
-            if api_key:
-                with open(".env", "w") as f:
-                    f.write(f"OPENAI_API_KEY={api_key}")
-            else:
-                messagebox.showerror(
-                    "Error", "OpenAI API key is required to use this application."
-                )
-                return False
+        import sys
 
-        return True
+        env_locations = [".env"]
+        if getattr(sys, "frozen", False):
+            # Running as bundled exe
+            bundle_dir = sys._MEIPASS
+            env_locations.append(os.path.join(bundle_dir, ".env"))
+
+        for env_path in env_locations:
+            if os.path.exists(env_path):
+                return True
+
+        api_key = simpledialog.askstring("API Key", "Please enter your OpenAI API key:")
+        if api_key:
+            with open(".env", "w") as f:
+                f.write(f"OPENAI_API_KEY={api_key}")
+            return True
+
+        messagebox.showerror(
+            "Error", "OpenAI API key is required to use this application."
+        )
+        return False
 
     def process_file(self, file_path, model="gpt-4o-mini"):
         if not self.file_handler.is_valid_file_type(file_path):
