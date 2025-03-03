@@ -16,7 +16,6 @@ if not os.path.exists(venv_site_packages):
 
 print(f"Using site-packages from: {venv_site_packages}")
 
-# Create a simple spec file
 spec_content = f"""# -*- mode: python ; coding: utf-8 -*-
 import os
 from PyInstaller.utils.hooks import collect_all
@@ -34,8 +33,10 @@ packages = [
     'customtkinter', 
     'markdown', 
     'docx', 
-    'weasyprint', 
     'openai',
+    'pypdf',
+    'python-docx',
+    'docx2pdf'
 ]
 
 # Initialize data collection
@@ -78,14 +79,14 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='analysthum_bim_insights',
+    name='analysthub_bim_insights',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,  # Set to True for debugging
+    console=False,
     icon=['icon.ico'],
 )
 """

@@ -179,14 +179,15 @@ class FileHandler:
 
     @staticmethod
     def save_as_pdf(content, filename=None, file_prefix=None):
-        """Save content as a PDF file."""
         try:
-            import weasyprint
+            import markdown2
             import base64
+            import xhtml2pdf.pisa as pisa
+            from io import BytesIO
         except ImportError:
             messagebox.showerror(
                 "Error",
-                "WeasyPrint package is required to save as PDF. Please install it with 'pip install weasyprint'",
+                "xhtml2pdf and markdown2 packages are required. Install them with 'pip install xhtml2pdf markdown2'",
             )
             return False
 
@@ -197,30 +198,17 @@ class FileHandler:
             )
 
         try:
-            import markdown2
-
             html_body = markdown2.markdown(
                 content,
                 extras=[
                     "fenced-code-blocks",
                     "tables",
-                    "break-on-newline",
                     "code-friendly",
                     "numbering",
                     "cuddled-lists",
-                    "code-color",
                 ],
             )
 
-            # Get the CSS file path - same approach as in ui.py
-            css_path = os.path.join(
-                os.path.dirname(os.path.dirname(__file__)),
-                "assets",
-                "css",
-                "analysis.css",
-            )
-
-            # Get the logo path
             logo_path = os.path.join(
                 os.path.dirname(os.path.dirname(__file__)),
                 "assets",
@@ -228,44 +216,39 @@ class FileHandler:
                 "ah_logo.png",
             )
 
-            # Convert logo path to data URI for embedding in HTML
+            css_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "assets",
+                "css",
+                "pdf.css",
+            )
+
             with open(logo_path, "rb") as img_file:
                 logo_data = base64.b64encode(img_file.read()).decode("utf-8")
 
-            # Read the CSS file
+            # Get absolute path to font files for xhtml2pdf to find them
+            fonts_dir = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)), "assets", "fonts"
+            )
+
+            # Add absolute paths to CSS
             with open(css_path, "r", encoding="utf-8") as css_file:
-                custom_css = css_file.read()
+                css_content = css_file.read()
+
+            # Replace relative paths with absolute paths
+            css_content = css_content.replace("../fonts/", f"{fonts_dir}/")
 
             styled_html = f"""
             <!DOCTYPE html>
             <html>
             <head>
                 <meta charset="UTF-8">
-                <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
                 <style>
-                    {custom_css}
-
-                    body {{
-                        background-color: white !important;
-                    }}
-
-                    .logo-container {{
-                        text-align: left;
-                        margin-bottom: 20px;
-                    }}
-
-                    .logo {{
-                        max-width: 180px;
-                    }}
-
-                    @page {{
-                        margin: 1cm;
-                    }}
-
+                    {css_content}
                 </style>
             </head>
             <body>
-                <div class="logo-container">
+                <div id="header_content" class="logo-container">
                     <img src="data:image/png;base64,{logo_data}" class="logo" alt="AnalystHub Logo">
                 </div>
                 {html_body}
@@ -273,10 +256,19 @@ class FileHandler:
             </html>
             """
 
-            # Generate PDF
-            weasyprint.HTML(string=styled_html).write_pdf(filename)
-            messagebox.showinfo("Success", f"File saved to {filename}")
-            return True
+            result_file = open(filename, "w+b")
+            pdf_status = pisa.CreatePDF(
+                BytesIO(styled_html.encode("utf-8")), dest=result_file
+            )
+            result_file.close()
+
+            if not pdf_status.err:
+                messagebox.showinfo("Success", f"File saved to {filename}")
+                return True
+            else:
+                messagebox.showerror("Error", "Failed to generate PDF")
+                return False
+
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save PDF: {str(e)}")
             return False

@@ -59,13 +59,13 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='analysthum_bim_insights',
+    name='analysthub_bim_insights',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,  # Set to True for debugging
+    console=False,
     icon=['icon.ico'],
 )
