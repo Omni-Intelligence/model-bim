@@ -79,24 +79,7 @@ packages = [
 ]
 
 # Handle assets directory
-datas = []
-assets_dir = os.path.join(project_dir, 'assets')
-if os.path.exists(assets_dir):
-    print(f"Including assets directory: {{assets_dir}}")
-    datas.append((assets_dir, 'assets'))
-else:
-    print(f"Warning: Assets directory not found at {{assets_dir}}")
-    # Create empty assets directory if it doesn't exist
-    os.makedirs(assets_dir, exist_ok=True)
-    datas.append((assets_dir, 'assets'))
-
-# Add .env file if it exists
-env_path = os.path.join(project_dir, '.env')
-if os.path.exists(env_path):
-    datas.append((env_path, '.'))
-    print(f"Including .env file: {{env_path}}")
-else:
-    print(f"Warning: .env file not found at {{env_path}}")
+datas = [('.env', '.'), ('icon.ico', '.'), ('assets', 'assets')]
 
 # Hidden imports that might be missed
 hiddenimports = [
@@ -166,6 +149,8 @@ pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz,
     a.scripts,
+    a.binaries,
+    a.datas,
     [],
     exclude_binaries=True,
     name='analysthub_bim_insights',
@@ -173,7 +158,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console={not is_windows},  # Console for debugging on non-Windows
+    console={not is_windows},
     icon=None,
 )
 
@@ -229,50 +214,3 @@ executable_dir = os.path.join(dist_path, "analysthub_bim_insights")
 if not os.path.exists(executable_dir):
     print(f"Error: Expected build directory not found at {executable_dir}")
     sys.exit(1)
-
-if is_windows:
-    with open(os.path.join(project_root, "run_app.bat"), "w") as f:
-        f.write("@echo off\n")
-        f.write("cd %~dp0\n")
-        f.write("dist\\analysthub_bim_insights\\analysthub_bim_insights.exe\n")
-    print("Created run_app.bat for Windows")
-else:
-    with open(os.path.join(project_root, "run_app.sh"), "w") as f:
-        f.write("#!/bin/bash\n\n")
-        f.write('cd "$(dirname "$0")"\n\n')
-        f.write("chmod +x ./dist/analysthub_bim_insights/analysthub_bim_insights\n")
-        f.write("./dist/analysthub_bim_insights/analysthub_bim_insights\n")
-
-    os.chmod(os.path.join(project_root, "run_app.sh"), 0o755)
-
-    # Ensure the executable has proper permissions
-    executable_path = os.path.join(executable_dir, "analysthub_bim_insights")
-    if os.path.exists(executable_path):
-        os.chmod(executable_path, 0o755)
-        print(f"Set execute permissions for {executable_path}")
-    else:
-        print(f"Warning: Could not find executable at {executable_path}")
-
-    print("Created run_app.sh for Unix/Linux/Mac")
-
-print("\nBuild completed successfully.")
-print(
-    "IMPORTANT: This builds a DIRECTORY-MODE executable that must be distributed as a directory."
-)
-print("To run the application:")
-
-if is_windows:
-    print("  - Run 'run_app.bat'")
-    print(
-        "  - Or navigate to dist\\analysthub_bim_insights and run analysthub_bim_insights.exe"
-    )
-else:
-    print("  - Run './run_app.sh'")
-    print(
-        "  - Or navigate to dist/analysthub_bim_insights and run ./analysthub_bim_insights"
-    )
-
-print(
-    "\nFor GitHub Actions or automated builds, the entire 'dist/analysthub_bim_insights' directory"
-)
-print("should be packaged as a zip/tar archive for distribution.")

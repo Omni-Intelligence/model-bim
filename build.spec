@@ -1,146 +1,158 @@
 # -*- mode: python ; coding: utf-8 -*-
 import os
 import sys
-import site
-from PyInstaller.utils.hooks import collect_all
+import importlib
+import shutil
+from PyInstaller.utils.hooks import collect_all, collect_submodules, collect_data_files
+with open('hook_packages.py', 'w') as f:
+    f.write("""
+import sys
+import os
 
-# For debugging
-print(f"Building from directory: {os.getcwd()}")
+# Add package directories to path at runtime
+package_dirs = ['xhtml2pdf', 'markdown2', 'tkinterweb', 'tkinterdnd2']
+for pkg in package_dirs:
+    pkg_path = os.path.join(sys._MEIPASS, pkg)
+    if os.path.exists(pkg_path) and pkg_path not in sys.path:
+        sys.path.insert(0, pkg_path)
+        print(f"Added {pkg_path} to path")
+""")
 
-# Block cipher setup
-block_cipher = None
-
-# Define important paths
-project_dir = os.getcwd()  # Use current directory in GitHub Actions
-site_packages = site.getsitepackages()[0]  # Use first site-packages directory
-
-print(f"Project directory: {project_dir}")
-print(f"Site packages: {site_packages}")
-
-# List packages to include
-packages = [
-    'tkinterweb', 
-    'tkinterdnd2', 
-    'PIL', 
-    'customtkinter', 
-    'markdown2',
-    'docx',       
-    'openai',
-    'xhtml2pdf',
-    'reportlab',
-    'html5lib',
-    'pypdf',
-    'python-dotenv'
-]
-
-# Initialize data files list
-datas = []
-
-# Handle assets directory safely
-assets_dir = os.path.join(project_dir, 'assets')
-os.makedirs(assets_dir, exist_ok=True)
-datas.append((assets_dir, 'assets'))
-
-# Create empty .env if needed
-env_path = os.path.join(project_dir, '.env')
-if not os.path.exists(env_path):
-    with open(env_path, 'w') as f:
-        f.write('# Placeholder .env created during build\n')
-datas.append((env_path, '.'))
-
-# Hidden imports that might be missed
-hiddenimports = [
-    'PIL._tkinter_finder',
-    'TkinterWeb',
-    'html5lib',
-    'reportlab',
-    'xhtml2pdf.w3c',
-    'html5lib.treebuilders.etree',
-    'pypdf',
-    'numpy',
-    'json',
-    're',
-    'urllib',
-    'urllib3',
-    'http.client',
-    'email.message',
-    'markdown2',
-    'io',
-]
-
-# Initialize binaries list
-binaries = []
-
-# Special package handling for problematic packages
-for pkg_name in ['xhtml2pdf', 'markdown2', 'reportlab', 'html5lib']:
-    for path in sys.path + site.getsitepackages():
-        pkg_path = os.path.join(path, pkg_name)
-        if os.path.exists(pkg_path) and os.path.isdir(pkg_path):
-            print(f"Adding package directory: {pkg_path} -> {pkg_name}")
-            if pkg_name in ['xhtml2pdf', 'markdown2']:
-                datas.append((pkg_path, pkg_name))
-            break
-
-# Collect all package data
-for package in packages:
+def get_package_path(package_name):
     try:
-        pkg_datas, pkg_binaries, pkg_hiddenimports = collect_all(package)
-        datas.extend(pkg_datas)
-        binaries.extend(pkg_binaries)
-        hiddenimports.extend(pkg_hiddenimports)
-        print(f"Collected data for package: {package}")
+        package = importlib.import_module(package_name)
+        return os.path.dirname(package.__file__)
+    except ImportError:
+        print(f"Warning: Cannot import {package_name}")
+        return None
+
+def collect_package(package_name):
+    try:
+        datas, binaries, hiddenimports = collect_all(package_name)
+        pkg_path = get_package_path(package_name)
+        if pkg_path:
+            print(f"Package {package_name} found at {pkg_path}")
+            datas.append((pkg_path, package_name))
+        return datas, binaries, hiddenimports
     except Exception as e:
-        print(f"Warning: Could not collect data for {package}: {e}")
+        print(f"Warning: Error collecting package {package_name}: {e}")
+        return [], [], []
 
-# Create placeholder main.py if it doesn't exist
-main_path = os.path.join(project_dir, 'main.py')
-if not os.path.exists(main_path):
-    with open(main_path, 'w') as f:
-        f.write('# Placeholder main.py created during build\n')
+def bundle_package(package_name):
+    src_path = get_package_path(package_name)
+    if not src_path:
+        return None
+    
+    # Create a local copy for bundling
+    dst_path = os.path.join(os.getcwd(), f'_bundled_{package_name}')
+    if os.path.exists(dst_path):
+        shutil.rmtree(dst_path)
+    
+    shutil.copytree(src_path, dst_path)
+    print(f"Bundled {package_name} from {src_path} to {dst_path}")
+    return dst_path
 
-# Analyze the application
+xhtml2pdf_bundle = bundle_package('xhtml2pdf')
+markdown2_bundle = bundle_package('markdown2')
+
+tkinterweb_datas, tkinterweb_binaries, tkinterweb_hiddenimports = collect_package('tkinterweb')
+tkinterdnd_datas, tkinterdnd_binaries, tkinterdnd_hiddenimports = collect_package('tkinterdnd2')
+xhtml2pdf_datas, xhtml2pdf_binaries, xhtml2pdf_hiddenimports = collect_package('xhtml2pdf')
+markdown2_datas, markdown2_binaries, markdown2_hiddenimports = collect_package('markdown2')
+
+tkdnd_path = os.path.join(os.path.dirname(importlib.import_module('tkinterdnd2').__file__), 'tkdnd')
+tkhtml_path = os.path.join(os.path.dirname(importlib.import_module('tkinterweb').__file__), 'tkhtml')
+
+binaries = [
+    *tkinterweb_binaries,
+    *tkinterdnd_binaries,
+    *xhtml2pdf_binaries,
+    *markdown2_binaries,
+]
+
+if os.path.exists(tkdnd_path):
+    binaries.append((tkdnd_path, 'tkdnd'))
+if os.path.exists(tkhtml_path):
+    binaries.append((tkhtml_path, 'tkhtml'))
+
+datas = [
+    ('.env', '.'), 
+    ('icon.ico', '.'), 
+    ('assets', 'assets')
+]    
+
+if xhtml2pdf_bundle:
+    datas.append((xhtml2pdf_bundle, 'xhtml2pdf'))
+if markdown2_bundle:
+    datas.append((markdown2_bundle, 'markdown2'))
+
+# Add collected data
+datas.extend([
+    *tkinterweb_datas,
+    *tkinterdnd_datas,
+    *xhtml2pdf_datas,
+    *markdown2_datas,
+])
+
 a = Analysis(
-    [main_path],
-    pathex=[project_dir, site_packages],
+    ['main.py'],
+    pathex=[os.getcwd()],
     binaries=binaries,
     datas=datas,
-    hiddenimports=hiddenimports,
+    hiddenimports=[
+        'xhtml2pdf', 'xhtml2pdf.w3c', 'xhtml2pdf.pisa', 'xhtml2pdf.context',
+        'xhtml2pdf.default', 'xhtml2pdf.parser', 'xhtml2pdf.util', 'xhtml2pdf.tags',
+        'markdown2',
+        'tkinterweb',
+        'tkinterweb.htmlwidgets',
+        'tkinterweb.bindings',
+        'tkinterweb.widgets',
+        'tkinterdnd2',
+        'tkinterdnd2.TkinterDnD',
+        'reportlab',
+        'reportlab.pdfbase',
+        'reportlab.pdfgen',
+        'reportlab.platypus',
+        'html5lib',
+        'html5lib.treebuilders.etree',
+        'pypdf',
+        'customtkinter',
+        'PIL._tkinter_finder',
+        'PIL',
+        'docx',
+        'openai',
+        'dotenv',
+        'json',
+        're',
+        'urllib',
+        'urllib3',
+        'http.client',
+        'email.message',
+        'io',
+        *tkinterweb_hiddenimports,
+        *tkinterdnd_hiddenimports,
+        *xhtml2pdf_hiddenimports,
+        *markdown2_hiddenimports,
+    ],
     hookspath=[],
     hooksconfig={},
-    runtime_hooks=[],
+    runtime_hooks=['hook_packages.py'],
     excludes=[],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
+    noarchive=False
 )
 
-# Create the PYZ archive
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
+pyz = PYZ(a.pure, a.zipped_data)
 
-# Create the executable
 exe = EXE(
     pyz,
     a.scripts,
-    [],
-    exclude_binaries=True,
-    name='analysthub_bim_insights',
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
-    console=True,  # Always show console in CI
-    icon=None,
-)
-
-# Create the distribution directory
-coll = COLLECT(
-    exe,
     a.binaries,
-    a.zipfiles,
     a.datas,
+    name='analysthub_bim_insights',
+    debug=True,
     strip=False,
     upx=True,
-    upx_exclude=[],
-    name='analysthub_bim_insights',
+    runtime_tmpdir=None,
+    console=True,
+    icon='icon.ico'
 )
