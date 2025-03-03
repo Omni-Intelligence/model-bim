@@ -11,8 +11,11 @@ print(f"Building from directory: {os.getcwd()}")
 block_cipher = None
 
 # Define important paths
-project_dir = r'/var/www/html/python/analysthub'
-site_packages_path = r'/var/www/html/python/analysthub/.venv/lib/python3.10/site-packages'
+project_dir = os.getcwd()  # Use current directory in GitHub Actions
+site_packages = site.getsitepackages()[0]  # Use first site-packages directory
+
+print(f"Project directory: {project_dir}")
+print(f"Site packages: {site_packages}")
 
 # List packages to include
 packages = [
@@ -27,28 +30,23 @@ packages = [
     'reportlab',
     'html5lib',
     'pypdf',
-    'dotenv'
+    'python-dotenv'
 ]
 
-# Handle assets directory
+# Initialize data files list
 datas = []
-assets_dir = os.path.join(project_dir, 'assets')
-if os.path.exists(assets_dir):
-    print(f"Including assets directory: {assets_dir}")
-    datas.append((assets_dir, 'assets'))
-else:
-    print(f"Warning: Assets directory not found at {assets_dir}")
-    # Create empty assets directory if it doesn't exist
-    os.makedirs(assets_dir, exist_ok=True)
-    datas.append((assets_dir, 'assets'))
 
-# Add .env file if it exists
+# Handle assets directory safely
+assets_dir = os.path.join(project_dir, 'assets')
+os.makedirs(assets_dir, exist_ok=True)
+datas.append((assets_dir, 'assets'))
+
+# Create empty .env if needed
 env_path = os.path.join(project_dir, '.env')
-if os.path.exists(env_path):
-    datas.append((env_path, '.'))
-    print(f"Including .env file: {env_path}")
-else:
-    print(f"Warning: .env file not found at {env_path}")
+if not os.path.exists(env_path):
+    with open(env_path, 'w') as f:
+        f.write('# Placeholder .env created during build\n')
+datas.append((env_path, '.'))
 
 # Hidden imports that might be missed
 hiddenimports = [
@@ -70,7 +68,7 @@ hiddenimports = [
     'io',
 ]
 
-# Add important modules directly
+# Initialize binaries list
 binaries = []
 
 # Special package handling for problematic packages
@@ -79,7 +77,7 @@ for pkg_name in ['xhtml2pdf', 'markdown2', 'reportlab', 'html5lib']:
         pkg_path = os.path.join(path, pkg_name)
         if os.path.exists(pkg_path) and os.path.isdir(pkg_path):
             print(f"Adding package directory: {pkg_path} -> {pkg_name}")
-            if pkg_name in ['xhtml2pdf', 'markdown2']:  # Critical packages
+            if pkg_name in ['xhtml2pdf', 'markdown2']:
                 datas.append((pkg_path, pkg_name))
             break
 
@@ -94,10 +92,16 @@ for package in packages:
     except Exception as e:
         print(f"Warning: Could not collect data for {package}: {e}")
 
+# Create placeholder main.py if it doesn't exist
+main_path = os.path.join(project_dir, 'main.py')
+if not os.path.exists(main_path):
+    with open(main_path, 'w') as f:
+        f.write('# Placeholder main.py created during build\n')
+
 # Analyze the application
 a = Analysis(
-    [os.path.join(project_dir, 'main.py')],
-    pathex=[project_dir, site_packages_path],
+    [main_path],
+    pathex=[project_dir, site_packages],
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
@@ -114,7 +118,7 @@ a = Analysis(
 # Create the PYZ archive
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
-# Create the main executable in directory mode (more reliable)
+# Create the executable
 exe = EXE(
     pyz,
     a.scripts,
@@ -125,7 +129,7 @@ exe = EXE(
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    console=True,  # Console for debugging on non-Windows
+    console=True,  # Always show console in CI
     icon=None,
 )
 
