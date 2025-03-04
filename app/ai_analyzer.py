@@ -9,7 +9,6 @@ from tkinter import messagebox
 class AIAnalyzer:
     def __init__(self):
         if getattr(sys, "frozen", False):
-            # If the application is run as a bundle (PyInstaller executable)
             env_path = os.path.join(sys._MEIPASS, ".env")
         else:
             application_path = os.path.dirname(os.path.abspath(__file__))

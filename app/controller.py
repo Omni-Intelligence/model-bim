@@ -15,7 +15,6 @@ class Controller:
 
         env_locations = [".env"]
         if getattr(sys, "frozen", False):
-            # Running as bundled exe
             bundle_dir = sys._MEIPASS
             env_locations.append(os.path.join(bundle_dir, ".env"))
 
