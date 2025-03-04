@@ -2,12 +2,13 @@
 
 import os
 import sys
-
 from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 block_cipher = None
 
-site_packages_path = r'/var/www/html/python/analysthub/.venv/lib/python3.10/site-packages'
+# Use the current Python environment's site-packages instead of the Linux path
+# This will properly reference the environment where PyInstaller is running
+site_packages_path = os.path.join(sys.base_prefix, 'Lib', 'site-packages')
 
 datas = []
 binaries = []
@@ -46,11 +47,11 @@ data_paths = [
 
 a = Analysis(
     ['main.py'],
-    pathex=[site_packages_path],
+    pathex=[os.getcwd()],  # Use current working directory instead of hardcoded path
     binaries=binaries,
     datas=data_paths + datas,
     hiddenimports=[
-        'PIL.Image', 'PIL._tkinter_finder', 'PIL._imagingtk', 'tkinterweb',
+        'PIL.Image', 'PIL._tkinter_finder', 'PIL._imagingtk', 'tkinterweb',  # Changed from TkinterWeb to tkinterweb
     ] + hiddenimports,
     hookspath=[],
     hooksconfig={},
@@ -77,6 +78,6 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=True,
+    console=False,
     icon=['icon.ico'],
 )

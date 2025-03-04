@@ -36,8 +36,8 @@ class AIAnalyzer:
                 ],
             )
 
-            logging.getLogger("app").info("Response generated" + str(response))
-            print("model:", model, "response:", response)
+            # logging.getLogger("app").info("Response generated" + str(response))
+            print("model:", model)
 
             return response.choices[0].message.content
 

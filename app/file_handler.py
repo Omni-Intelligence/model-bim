@@ -406,12 +406,17 @@ class FileHandler:
             import base64
             import xhtml2pdf.pisa as pisa
             from io import BytesIO
+            import tempfile
         except ImportError:
             messagebox.showerror(
                 "Error",
                 "xhtml2pdf and markdown2 packages are required. Install them with 'pip install xhtml2pdf markdown2'",
             )
             return False
+
+        custom_temp_dir = os.path.join(os.path.expanduser("~"), "temp")
+        os.makedirs(custom_temp_dir, exist_ok=True)
+        tempfile.tempdir = custom_temp_dir
 
         if not filename:
             prefix = file_prefix if file_prefix else "analysis"
@@ -448,16 +453,13 @@ class FileHandler:
             with open(logo_path, "rb") as img_file:
                 logo_data = base64.b64encode(img_file.read()).decode("utf-8")
 
-            # Get absolute path to font files for xhtml2pdf to find them
             fonts_dir = os.path.join(
                 os.path.dirname(os.path.dirname(__file__)), "assets", "fonts"
             )
 
-            # Add absolute paths to CSS
             with open(css_path, "r", encoding="utf-8") as css_file:
                 css_content = css_file.read()
 
-            # Replace relative paths with absolute paths
             css_content = css_content.replace("../fonts/", f"{fonts_dir}/")
 
             styled_html = f"""
@@ -492,7 +494,12 @@ class FileHandler:
                 return False
 
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to save PDF: {str(e)}")
+            import traceback
+
+            error_details = traceback.format_exc()
+            messagebox.showerror(
+                "Error", f"Failed to save PDF: {str(e)}\n\nDetails: {error_details}"
+            )
             return False
 
     @staticmethod
