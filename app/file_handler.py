@@ -422,94 +422,92 @@ class FileHandler:
                 os.path.expanduser("~"), f"{prefix}_{int(time.time())}.pdf"
             )
 
-        with tempfile.TemporaryDirectory() as temp_dir:
-            try:
-                html_body = markdown2.markdown(
-                    content,
-                    extras=[
-                        "fenced-code-blocks",
-                        "tables",
-                        "code-friendly",
-                        "numbering",
-                        "cuddled-lists",
-                    ],
-                )
+        try:
+            html_body = markdown2.markdown(
+                content,
+                extras=[
+                    "fenced-code-blocks",
+                    "tables",
+                    "code-friendly",
+                    "numbering",
+                    "cuddled-lists",
+                ],
+            )
 
-                logo_path = os.path.join(
-                    os.path.dirname(os.path.dirname(__file__)),
-                    "assets",
-                    "images",
-                    "ah_logo.png",
-                )
+            logo_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "assets",
+                "images",
+                "ah_logo.png",
+            )
 
-                css_path = os.path.join(
-                    os.path.dirname(os.path.dirname(__file__)),
-                    "assets",
-                    "css",
-                    "pdf.css",
-                )
+            css_path = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)),
+                "assets",
+                "css",
+                "pdf.css",
+            )
 
-                with open(logo_path, "rb") as img_file:
-                    logo_data = base64.b64encode(img_file.read()).decode("utf-8")
+            fonts_dir = os.path.join(
+                os.path.dirname(os.path.dirname(__file__)), "assets", "fonts"
+            )
 
-                fonts_dir = os.path.join(
-                    os.path.dirname(os.path.dirname(__file__)), "assets", "fonts"
-                )
+            with open(logo_path, "rb") as img_file:
+                logo_data = base64.b64encode(img_file.read()).decode("utf-8")
 
-                temp_fonts_dir = os.path.join(temp_dir, "fonts")
-                os.makedirs(temp_fonts_dir, exist_ok=True)
+            with open(css_path, "r", encoding="utf-8") as css_file:
+                css_content = css_file.read()
 
-                for font_file in os.listdir(fonts_dir):
-                    if font_file.endswith(".ttf"):
-                        shutil.copy2(
-                            os.path.join(fonts_dir, font_file),
-                            os.path.join(temp_fonts_dir, font_file),
+            for font_file in os.listdir(fonts_dir):
+                if font_file.endswith(".ttf"):
+                    font_path = os.path.join(fonts_dir, font_file)
+                    with open(font_path, "rb") as f:
+                        font_data = base64.b64encode(f.read()).decode("utf-8")
+                        # Replace file reference with data URI
+                        css_content = css_content.replace(
+                            f"../fonts/{font_file}",
+                            f"data:font/truetype;base64,{font_data}",
                         )
 
-                with open(css_path, "r", encoding="utf-8") as css_file:
-                    css_content = css_file.read()
+            styled_html = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    {css_content}
+                </style>
+            </head>
+            <body>
+                <div id="header_content" class="logo-container">
+                    <img src="data:image/png;base64,{logo_data}" class="logo" alt="AnalystHub Logo">
+                </div>
+                {html_body}
+            </body>
+            </html>
+            """
 
-                css_content = css_content.replace("../fonts/", f"{fonts_dir}/")
+            result_file = open(filename, "w+b")
+            pdf_status = pisa.CreatePDF(
+                BytesIO(styled_html.encode("utf-8")), dest=result_file
+            )
+            result_file.close()
 
-                styled_html = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        {css_content}
-                    </style>
-                </head>
-                <body>
-                    <div id="header_content" class="logo-container">
-                        <img src="data:image/png;base64,{logo_data}" class="logo" alt="AnalystHub Logo">
-                    </div>
-                    {html_body}
-                </body>
-                </html>
-                """
-
-                result_file = open(filename, "w+b")
-                pdf_status = pisa.CreatePDF(
-                    BytesIO(styled_html.encode("utf-8")), dest=result_file
-                )
-                result_file.close()
-
-                if not pdf_status.err:
-                    messagebox.showinfo("Success", f"File saved to {filename}")
-                    return True
-                else:
-                    messagebox.showerror("Error", "Failed to generate PDF")
-                    return False
-
-            except Exception as e:
-                import traceback
-
-                error_details = traceback.format_exc()
-                messagebox.showerror(
-                    "Error", f"Failed to save PDF: {str(e)}\n\nDetails: {error_details}"
-                )
+            if not pdf_status.err:
+                messagebox.showinfo("Success", f"File saved to {filename}")
+                return True
+            else:
+                messagebox.showerror("Error", "Failed to generate PDF")
                 return False
+
+        except Exception as e:
+            import traceback
+
+            error_details = traceback.format_exc()
+            messagebox.showerror(
+                "Error", f"Failed to save PDF: {str(e)}\n\nDetails: {error_details}"
+            )
+            return False
 
     @staticmethod
     def save_analysis(content, file_format, file_prefix=None):
